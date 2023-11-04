@@ -1,0 +1,195 @@
+nav {
+    padding: 5px;
+    text-align: center;
+    text-decoration: none;
+    width: 100%;
+    height: 60px;
+    border-bottom: 1px solid rgb(52, 56, 58);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-direction: row;
+    position: fixed;
+    top: 0;
+    z-index: 1;
+    background-color: #131516;
+    padding: 0 10px;
+}
+
+.left-header {
+    display: flex;
+    flex-direction: row;
+    justify-content: flex-start;
+    align-items: center;
+}
+
+.left-header img {
+    width: 45px;
+    height: 45px;
+    animation: all 0.2s ease-in-out;
+}
+
+.left-header img:hover {
+    filter: brightness(0.8);
+}
+
+.left-header .search-bar {
+    display: flex;
+    height: 40px;
+    width: 250px;
+    flex-direction: row;
+    justify-content: flex-start;
+    align-items: center;
+    margin-left: 10px;
+    border-radius: 5px;
+    background-color: #131516;
+    filter: contrast(0.85);
+}
+
+.left-header .search-bar input {
+    border-radius: 0 5px 5px 0;
+    padding: 5px;
+    font-size: 1rem;
+    color: #d8d4cf;
+    border: none;
+    background-color: transparent;
+    vertical-align: middle;
+}
+
+.left-header .search-bar input:focus {
+    outline: none;
+}
+
+.left-header .search-bar input:focus-within {
+    outline: none;
+}
+
+.left-header .search-bar svg {
+    height: 20px;
+    width: 20px;
+    margin-left: 10px;
+    margin-right: 5px;
+    fill: #d8d4cf;
+}
+
+
+.right-header {
+    display: flex;
+    flex-direction: row;
+    justify-content: flex-end;
+    align-items: center;
+    vertical-align: middle;
+    margin-right: 10px;
+}
+
+.nav-link {
+    padding-left: 10px;
+    text-decoration: none;
+    font-size: 1rem;
+    color: #d8d4cf;
+    font-weight: 400;
+    transition: all 0.3s ease-in-out;
+    margin-left: 10px;
+}
+
+.sign-up {
+    padding: 10px 20px;
+    border-radius: 5px;
+    background-color: #0100d8;
+    color: #ffffff;
+    filter: contrast(0.85);
+}
+
+.profile-dropdown {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start ;
+    align-items: flex-start;
+    position: relative;
+    padding-top: 10px;
+    width: 200px;
+    background-color: #131516;
+    border-radius: 5px;
+    filter: contrast(0.85);
+    position: absolute;
+    top: 70px;
+    right: 10;
+    padding-bottom: 10px;
+    z-index: 1;
+    display: none;
+}
+
+.dropdown-link {
+    width: 100%;
+    text-decoration: none;
+    color: rgb(164, 157, 145);
+    font-size: 1rem;
+    font-weight: 4  00;
+    display: flex;
+    flex-direction: row;
+    justify-content: flex-start;
+    align-items: center;
+    margin-bottom: 10px;
+    padding: 0px 20px;
+}
+
+.dropdown-link svg {
+    height: 25px;
+    width: 25px;
+    margin-right: 10px;
+    fill: rgb(164, 157, 145);
+}
+
+.dropdown-link:hover {
+    color: #ffffff;
+}
+
+.dropdown-link:hover svg {
+    fill: #ffffff;
+}
+
+.dropdown-link.sign-out {
+    margin-top: 10px;
+}
+
+hr {
+    width: 100%;
+    border: 1px solid rgb(52, 56, 58);
+    margin: 10px 0;
+}
+
+.profile-pic {
+    margin-left: 10px;
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    cursor: pointer;
+}
+
+.profile-pic:hover {
+    filter: brightness(0.8);
+}
+
+.svg-link {
+    display: flex;
+    flex-direction: row;
+    justify-content: flex-start;
+    align-items: center;
+    text-decoration: none;
+    font-size: 1rem;
+    font-weight: 400;
+}
+
+.svg-link svg {
+    height: 25px;
+    width: 25px;
+    margin-right: 5px;
+    fill: #d8d4cf;
+}
+
+
+@media only screen and (max-width: 600px) {
+    .sign-in {
+        display: none;
+    }
+}

@@ -11,7 +11,9 @@ This file contains the server side code for the web application InkBloom, a powe
 # Importing the required libraries
 
 import os
+import re
 from dotenv import load_dotenv
+import redis
 from flask import (
     Flask,
     render_template,
@@ -23,6 +25,7 @@ from flask import (
     abort,
 )
 from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
 from flask_session import Session
 from pymongo import MongoClient
 
@@ -39,7 +42,7 @@ app.config["SECRET_KEY"] = os.getenv("SECRET_KEY")
 # Session Configuration
 
 app.config["SESSION_TYPE"] = "redis"
-app.config["SESSION_REDIS"] = os.getenv("REDIS_URL")
+app.config["SESSION_REDIS"] = redis.from_url(os.getenv("REDIS_URL"))
 app.config["SESSION_COOKIE_SECURE"] = True
 app.config["SESSION_COOKIE_HTTPONLY"] = True
 app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
@@ -59,9 +62,14 @@ Session(app)
 
 # Rate Limiter Configuration
 
+pool = redis.connection.BlockingConnectionPool.from_url(os.getenv("REDIS_URL"))
 limiter = Limiter(
     app=app,
-    key_func=lambda: session.get("user_id"),
+    key_func=lambda: get_remote_address(),
+    default_limits=["30/minute"],
+    storage_uri=os.getenv("REDIS_URL"),
+    storage_options={"connection_pool": pool},
+    strategy="moving-window",
 )
 
 # Application User Routes
@@ -72,6 +80,9 @@ def index():
     """
     This function renders the home page of the application.
     """
+    # session["logged_in"] = True
+    # session["admin"] = True
+    # session["profile_pic"] = "https://cdn.projectrexa.dedyn.io/projectrexa/assets/logo_no_background.png"
     blogs = DATABASE["BLOGS"].find().limit(10)
     featured_blogs = DATABASE["BLOGS"].find({"featured": True}).limit(5)
     return render_template("index.html", blogs=blogs, featured_blogs=featured_blogs)
@@ -244,7 +255,11 @@ def post_blog_comments(blog_id):
             "status": "error",
             "message": "User authentication is required for posting a comment!",
         }, 401
-    comment = request.get_json()["comment"] if request.get_json() and "comment" in request.get_json() else None
+    comment = (
+        request.get_json()["comment"]
+        if request.get_json() and "comment" in request.get_json()
+        else None
+    )
     if comment:
         DATABASE["BLOGS"].update_one(
             {"_id": blog_id},
@@ -276,3 +291,7 @@ def get_blog():
         blogs = DATABASE["BLOGS"].find().limit(10)
 
     return list(blogs), 200
+
+
+if __name__ == "__main__":
+    app.run(debug=True)
