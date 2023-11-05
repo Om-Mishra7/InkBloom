@@ -254,7 +254,7 @@ def github_callback():
 
     if code is None:
         print("No code provided")
-        return redirect("/user/authorize" + "?error=No code provided")
+        return redirect(url_for("index"))
 
     try:
         response = requests.post(
