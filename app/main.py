@@ -238,7 +238,7 @@ def authentication():
     if session.get("logged_in"):
         return redirect(url_for("index"))
     return redirect(
-        "https://github.com/login/oauth/authorize?client_id=d47204e1b7b5ecd7a543&redirect_uri=http://127.0.0.1:5000/user/github/callback&scope=user:email"
+        "https://github.com/login/oauth/authorize?client_id=d47204e1b7b5ecd7a543&redirect_uri=https://blog.projectrexa.dedyn.io/user/github/callback&scope=user:email"
     )
 
 
