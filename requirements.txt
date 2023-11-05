@@ -1,6 +1,6 @@
 requests
 python-dotenv
-Redis-py
+redis
 flask
 Flask-Session
 Flask-Limiter
