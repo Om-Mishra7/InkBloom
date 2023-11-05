@@ -102,7 +102,7 @@ nav {
 .profile-dropdown {
     display: flex;
     flex-direction: column;
-    justify-content: flex-start ;
+    justify-content: flex-start;
     align-items: flex-start;
     position: relative;
     padding-top: 10px;
@@ -123,7 +123,7 @@ nav {
     text-decoration: none;
     color: rgb(164, 157, 145);
     font-size: 1rem;
-    font-weight: 4  00;
+    font-weight: 4 00;
     display: flex;
     flex-direction: row;
     justify-content: flex-start;
@@ -186,6 +186,7 @@ hr {
     margin-right: 5px;
     fill: #d8d4cf;
 }
+
 
 
 @media only screen and (max-width: 600px) {

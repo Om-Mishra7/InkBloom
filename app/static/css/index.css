@@ -243,7 +243,6 @@ main .sidebar-section {
     position: fixed;
     bottom: 10px;
     height: auto;
-    width: 100%;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -252,7 +251,6 @@ main .sidebar-section {
 }
 
 .social-media {
-    width: 100%;
     display: flex;
     flex-direction: row;
     align-items: center;
@@ -260,11 +258,17 @@ main .sidebar-section {
     gap: 10px;
 }
 
-.footer-message p {
+.footer-message {
+    width: 100%;
     font-size: 0.8rem;
     font-weight: 400;
     color: #d8d4cf;
-
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    text-align: center;
 }
 
 .social-media a svg {
@@ -276,6 +280,10 @@ main .sidebar-section {
 .github-link svg {
     width: 25px !important;
     height: 25px !important;
+}
+
+.version-info {
+    font-family: monospace;
 }
 
 @media only screen and (max-width: 768px) {

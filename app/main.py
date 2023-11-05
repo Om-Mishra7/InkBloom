@@ -13,6 +13,7 @@ This file contains the server side code for the web application InkBloom, a powe
 import os
 import secrets
 import datetime
+import json
 import requests
 from dotenv import load_dotenv
 import redis
@@ -35,6 +36,9 @@ load_dotenv()  # Loading the environment variables
 
 
 app = Flask(__name__)
+
+with open("app/app.json", "r") as f:
+    service_version = json.load(f)["service-version"]
 
 # App Configuration
 
@@ -77,6 +81,9 @@ limiter = Limiter(
 def format_timestamp(s):
     return datetime.datetime.strptime(s, "%Y-%m-%d %H:%M:%S.%f").strftime("%d %B %Y")
 
+@app.context_processor
+def app_version():
+    return dict(service_version=service_version)
 
 # Application User Routes
 
@@ -88,7 +95,7 @@ def index():
     """
     blogs = DATABASE["BLOGS"].find()
     featured_blogs = DATABASE["BLOGS"].find({"featured": True}).limit(5)
-    return render_template("index.html", blogs=blogs, featured_blogs=featured_blogs)
+    return render_template("index.html", blogs=blogs, featured_blogs=featured_blogs, service_version=service_version)
 
 
 @app.route("/blogs", methods=["GET"])
