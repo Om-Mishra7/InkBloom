@@ -1,0 +1,8 @@
+requests
+python-dotenv
+Redis-py
+flask
+Flask-Session
+Flask-Limiter
+pymongo
+
