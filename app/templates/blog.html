@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    {% include 'partials/header.html' %}
+    <title>InkBloom | ProjectRexa</title>
+    <link rel="stylesheet" href="/static/css/blog.css" />
+    <script src="/static/js/blog.js"></script>
+  </head>
+  <body>
+    {% include 'partials/navbar.html' %}
+    <main>
+      <div class="blog-meta">
+        <h1 class="blog-title">{{ blog.title }}</h1>
+        <p class="blog-summary">{{ blog.summary }}</p>
+        <div class="blog-author">
+          <img
+            src="{{ blog.authour_profile_pic }}"
+            alt="{{ blog.author_name }}"
+          />
+          <div class="blog-author-info">
+            <p class="blog-author-name">{{ blog.authour_name }}</p>
+            <p class="blog-date">
+              {{(blog.created_at | string) | format_timestamp}}
+            </p>
+          </div>
+        </div>
+      </div>
+      <div class="blog-content">
+        <div class="blog-cover-image">
+          <img src="{{ blog.cover_image }}" alt="{{ blog.title }}" />
+        </div>
+        {{ blog.content | safe }}
+      </div>
+    </main>
+  </body>
+</html>

@@ -1,0 +1,128 @@
+body {
+	font-family: 'Roboto', sans-serif;
+}
+
+.editor {
+	border: 1px rgb(52, 56, 58);
+	width: 100%;
+}
+
+.form-top {
+	display: flex;
+	width: 100%;
+	flex-direction: row;
+	justify-content: space-between;
+	align-items: center;
+	gap: 20px;
+	flex: 1;
+}
+
+form {
+	padding: 0 100px;
+	display: flex;
+	width: 100%;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	margin-bottom: 50px;
+	gap: 20px;
+}
+
+form input {
+	width: 100%;
+	height: 40px;
+	padding: 0 15px;
+	border: 1px solid rgb(52, 56, 58);
+	font: inherit;
+}
+
+form input:focus {
+	outline: none;
+}
+
+form textarea {
+	width: 100%;
+	height: 100px;
+	padding: 15px;
+	border: 1px solid rgb(52, 56, 58);
+	resize: none;
+	font: inherit;
+}
+
+form textarea:focus {
+	outline: none;
+}
+
+form .form-top {
+	width: 100%;
+}
+
+.form-bottom {
+	width: 100%;
+	display: flex;
+	flex-direction: row;
+	gap: 20px;
+}
+
+input[type='submit'] {
+	width: 100%;
+	height: 40px;
+	border: none;
+	background-color: rgb(52, 56, 58);
+	color: white;
+	font: inherit;
+	cursor: pointer;
+}
+
+input[type='submit']:hover {
+	background-color: rgb(52, 56, 58);
+}
+
+input[type='file'] {
+	width: 100%;
+	height: 40px;
+	font: inherit;
+	border: none;
+}
+
+select {
+	width: 99%;
+	height: 40px;
+	padding: 0 0 0 10px;
+	border: 1px solid rgb(52, 56, 58);
+	font: inherit;
+	margin: 0;
+}
+
+select:focus {
+	outline: none;
+}
+
+select option {
+	font: inherit;
+}
+
+.container {
+	width: 100%;
+	margin: 0;
+	padding: 0;
+}
+
+input[type="file"] {
+	display: none;
+}
+
+label {
+	display: block;
+	position: relative;
+	background-color: transparent;
+	color: #000000;
+	background-color: #ffffff;
+	font-size: 1rem;
+	font-weight: 500;
+	text-align: center;
+	width: 100%;
+	padding: 10px 0;
+	margin: auto;
+	cursor: pointer;
+}

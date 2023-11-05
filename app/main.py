@@ -11,7 +11,9 @@ This file contains the server side code for the web application InkBloom, a powe
 # Importing the required libraries
 
 import os
-import re
+import secrets
+import datetime
+import requests
 from dotenv import load_dotenv
 import redis
 from flask import (
@@ -48,7 +50,6 @@ app.config["SESSION_COOKIE_HTTPONLY"] = True
 app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
 app.config["SESSION_COOKIE_NAME"] = "inkbloom-session"
 
-
 # Database Configuration
 
 MONOGDB_CLIENT = MongoClient(os.getenv("MONGODB_URL"))
@@ -66,11 +67,16 @@ pool = redis.connection.BlockingConnectionPool.from_url(os.getenv("REDIS_URL"))
 limiter = Limiter(
     app=app,
     key_func=lambda: get_remote_address(),
-    default_limits=["30/minute"],
     storage_uri=os.getenv("REDIS_URL"),
     storage_options={"connection_pool": pool},
     strategy="moving-window",
 )
+
+
+@app.template_filter("format_timestamp")
+def format_timestamp(s):
+    return datetime.datetime.strptime(s, "%Y-%m-%d %H:%M:%S.%f").strftime("%d %B %Y")
+
 
 # Application User Routes
 
@@ -80,10 +86,7 @@ def index():
     """
     This function renders the home page of the application.
     """
-    # session["logged_in"] = True
-    # session["admin"] = True
-    # session["profile_pic"] = "https://cdn.projectrexa.dedyn.io/projectrexa/assets/logo_no_background.png"
-    blogs = DATABASE["BLOGS"].find().limit(10)
+    blogs = DATABASE["BLOGS"].find()
     featured_blogs = DATABASE["BLOGS"].find({"featured": True}).limit(5)
     return render_template("index.html", blogs=blogs, featured_blogs=featured_blogs)
 
@@ -97,18 +100,7 @@ def blogs():
     return render_template("blogs.html", blogs=blogs)
 
 
-@app.route("/view/<blog_id>", methods=["GET"])
-def view(blog_id):
-    """
-    This function renders the blog page of the application.
-    """
-    blog = DATABASE["BLOGS"].find_one({"_id": blog_id})
-    if blog:
-        return redirect("/blogs/view/" + blog["slug"])
-    abort(404)
-
-
-@app.route("/blogs/view/<blog_slug>", methods=["GET"])
+@app.route("/blogs/<blog_slug>", methods=["GET"])
 def blog(blog_slug):
     """
     This function renders the blog page of the application.
@@ -119,38 +111,90 @@ def blog(blog_slug):
     abort(404)
 
 
-@app.route("/blogs/create", methods=["GET", "POST"])
+@app.route("/admin/blogs/create", methods=["GET", "POST"])
 def create_blog():
     """
     This function renders the create blog page of the application.
     """
-    if (
-        request.method == "POST"
-        and session["logged_in"]
-        and session["user_role"] == "admin"
-    ):
-        blog_title = request.form["blog_title"]
-        blog_content = request.form["blog_content"]
-        blog_featured = request.form["blog_featured"]
-        blog_slug = request.form["blog_slug"]
+    if request.method == "POST" and session["logged_in"] and session["admin"]:
+        blog_title = request.form["title"]
+        blog_content = request.form["content"]
+        category = request.form["category"]
+        blog_tags = request.form["tags"].split(",")
+        for tag in blog_tags:
+            if tag == "":
+                blog_tags.remove(tag)
+            else:
+                blog_tags[blog_tags.index(tag)] = tag.strip().lower()
+        blog_summary = request.form["summary"]
+        blog_slug = blog_title.replace(" ", "-").lower()
+        blog_cover_image = request.files["cover_image"]
+        authour = session["user_id"]
+        authour_name = session["user_name"]
+        blog_featured = True if "featured" in blog_tags else False
+        blog_tags = [tag for tag in blog_tags if tag != "featured"]
+
+        if category == "dev-log":
+            blog_content = (
+                f"<h1> {datetime.datetime.now().strftime('%d %B %Y')} </h1> <br>"
+                + blog_content
+            )
+
+        if blog_cover_image.filename == "":
+            flash("No file found!", "error")
+            return redirect("/admin/blogs/create")
+        if blog_cover_image.content_type not in [
+            "image/png",
+            "image/jpeg",
+            "image/jpg",
+            "image/gif",
+            "image/webp",
+            "svg+xml",
+        ]:
+            flash("Invalid file type!", "error")
+            return redirect("/admin/blogs/create")
+        if blog_cover_image:
+            response = requests.post(
+                "http://ather.api.projectrexa.dedyn.io/upload",
+                files={"file": blog_cover_image.read()},
+                data={
+                    "key": f"projectrexa/blog/assets/{secrets.token_hex(16)}",
+                    "content_type": blog_cover_image.content_type,
+                    "public": "true",
+                },
+                headers={"X-Authorization": os.getenv("ATHER_API_KEY")},
+                timeout=10,
+            ).json()
+            blog_cover_image = response["access_url"]
+
         blog = {
             "title": blog_title,
             "content": blog_content,
-            "featured": blog_featured,
+            "category": category,
+            "tags": blog_tags,
+            "summary": blog_summary,
             "slug": blog_slug,
+            "cover_image": blog_cover_image,
+            "authour": authour,
+            "authour_name": authour_name,
+            "authour_profile_pic": session["profile_pic"],
+            "featured": blog_featured,
+            "read_time": len(blog_content.split(" ")) // 300,
             "views": 0,
             "likes": 0,
-            "comments_count": 0,
-            "comments": [],
             "liked_by": [],
+            "comments": [],
+            "comments_count": 0,
+            "created_at": datetime.datetime.now(),
         }
         DATABASE["BLOGS"].insert_one(blog)
         flash("Blog created successfully!", "success")
-        return redirect("/blogs")
-    return render_template("create_blog.html")
+        return redirect(f"/blogs/{blog_slug}"), 302
+    if session["logged_in"] and session["admin"]:
+        return render_template("create_blog.html")
 
 
-@app.route("/blogs/edit/<blog_id>", methods=["GET", "POST"])
+@app.route("/admin/blogs/edit/<blog_id>", methods=["GET", "POST"])
 def edit_blog(blog_id):
     """
     This function renders the edit blog page of the application.
@@ -179,34 +223,114 @@ def edit_blog(blog_id):
     abort(404)
 
 
+@app.route("/user/authorize", methods=["GET"])
+def authentication():
+    """
+    This function renders the authentication page of the application.
+    """
+    if session.get("logged_in"):
+        return redirect(url_for("index"))
+    return redirect(
+        "https://github.com/login/oauth/authorize?client_id=d47204e1b7b5ecd7a543&redirect_uri=http://127.0.0.1:5000/user/github/callback&scope=user:email"
+    )
+
+
+@app.route("/user/github/callback")
+def github_callback():
+    """
+    The github callback is used to log in to the contributor mode of the website.
+    """
+    if session.get("logged_in"):
+        return redirect(url_for("index"))
+
+    code = request.args.get("code")
+
+    if code is None:
+        print("No code provided")
+        return redirect("/user/authorize" + "?error=No code provided")
+
+    try:
+        response = requests.post(
+            "https://github.com/login/oauth/access_token?client_id={}&client_secret={}&code={}".format(
+                os.getenv("GITHUB_CLIENT_ID"), os.getenv("GITHUB_CLIENT_SECRET"), code
+            ),
+            headers={"Accept": "application/json"},
+            timeout=5,
+        )
+
+        user_data = requests.get(
+            "https://api.github.com/user",
+            headers={
+                "Authorization": "Bearer {}".format(response.json()["access_token"])
+            },
+            timeout=5,
+        ).json()
+
+        if user_data["email"] is None:
+            email = requests.get(
+                "https://api.github.com/user/emails",
+                headers={
+                    "Authorization": "Bearer {}".format(response.json()["access_token"])
+                },
+                timeout=5,
+            ).json()
+            for record in email:
+                if record["primary"] is True:
+                    user_data["email"] = record["email"]
+                    break
+
+        user = DATABASE["USERS"].find_one({"_id": user_data["id"]})
+
+        if user is None:
+            DATABASE["USERS"].insert_one(
+                {
+                    "_id": user_data["id"],
+                    "name": user_data["name"],
+                    "email": user_data["email"],
+                    "profile_pic": user_data["avatar_url"],
+                    "admin": False,
+                    "created_at": datetime.datetime.now(),
+                }
+            )
+
+            user = DATABASE["USERS"].find_one({"_id": user_data["id"]})
+
+        session["logged_in"] = True
+        session["user_id"] = user_data["id"]
+        session["user_name"] = user_data["name"]
+        session["user_email"] = user_data["email"]
+        session["profile_pic"] = user_data["avatar_url"]
+        session["admin"] = user["admin"] if user else False
+
+        return redirect(url_for("index"))
+    except Exception as e:
+        print(e)
+        return redirect("/user/authorize" + "?error=Something went wrong!")
+
+
+@app.route("/user/sign-out", methods=["GET"])
+def signout():
+    """
+    This function signs the user out of the application.
+    """
+    session.clear()
+    return redirect(url_for("index"))
+
+
 # Application API Routes
 
 
-@app.route("/api/v1/statisics/views/<blog_id>", methods=["POST"])
-@limiter.limit("30/minute")
-def get_blog_views(blog_id):
+@app.route("/api/v1/statisics/views/<blog_slug>", methods=["POST"])
+@limiter.limit("1/hour")
+def get_blog_views(blog_slug):
     """
     This function returns the number of views of a blog post.
     """
-    blog = DATABASE["BLOGS"].find_one({"_id": blog_id})
+    blog = DATABASE["BLOGS"].find_one({"slug": blog_slug})
     if blog:
-        DATABASE["BLOGS"].update_one({"_id": blog_id}, {"$inc": {"views": 1}})
+        DATABASE["BLOGS"].update_one({"slug": blog_slug}, {"$inc": {"views": 1}})
         return str(blog["views"])
     abort(404)
-
-
-@app.route("/api/v1/statisics/likes/<blog_id>", methods=["GET"])
-@limiter.limit("30/minute")
-def get_blog_likes(blog_id):
-    """
-    This function returns the number of likes of a blog post.
-    """
-    post_likes = DATABASE["BLOGS"].find_one({"_id": blog_id})["likes"]
-
-    if post_likes:
-        return str(post_likes), 200
-
-    return "0", 200
 
 
 @app.route("/api/v1/statisics/likes/<blog_id>", methods=["POST"])
@@ -291,6 +415,48 @@ def get_blog():
         blogs = DATABASE["BLOGS"].find().limit(10)
 
     return list(blogs), 200
+
+
+@app.route("/api/v1/user-content/upload", methods=["POST"])
+@limiter.limit("30/minute")
+def upload_user_content():
+    """
+    This function uploads the user content to the server.
+    """
+    if request.method == "POST" and session["logged_in"] and session["admin"]:
+        if "file" not in request.files:
+            return {"status": "error", "message": "No file found!"}, 400
+        file = request.files["file"]
+        if file.filename == "":
+            return {"status": "error", "message": "No file found!"}, 400
+        if file.content_type not in [
+            "image/png",
+            "image/jpeg",
+            "image/jpg",
+            "image/gif",
+            "image/webp",
+            "svg+xml",
+        ]:
+            return {"status": "error", "message": "Invalid file type!"}, 400
+        if file:
+            response = requests.post(
+                "http://ather.api.projectrexa.dedyn.io/upload",
+                files={"file": file.read()},
+                data={
+                    "key": f"projectrexa/blog/assets/{secrets.token_hex(16)}",
+                    "content_type": file.content_type,
+                    "public": "true",
+                },
+                headers={"X-Authorization": os.getenv("ATHER_API_KEY")},
+                timeout=10,
+            ).json()
+
+            return {
+                "status": "success",
+                "message": "File uploaded successfully!",
+                "location": response["access_url"],
+            }, 200
+    abort(401)
 
 
 if __name__ == "__main__":

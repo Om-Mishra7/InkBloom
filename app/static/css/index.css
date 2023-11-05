@@ -1,5 +1,5 @@
 main {
-    margin: 60px 0 0 0; 
+    margin: 60px 0 0 0;
     display: flex;
     flex-direction: row;
     align-items: flex-start;
@@ -14,7 +14,7 @@ main .main-section {
     align-items: center;
     justify-content: flex-start;
     padding: 0 50px;
-    width: max-content;
+    width: 100%;
     min-height: 100vh;
 }
 
@@ -117,7 +117,7 @@ main .main-section {
     gap: 5px;
 }
 
-.blog-tags p{
+.blog-tags p {
     font-size: 0.8rem;
     font-weight: 400;
     color: #d8d4cf;
@@ -147,7 +147,8 @@ main .main-section {
     gap: 5px;
 }
 
-.blog-views p svg, .read-time p svg {
+.blog-views p svg,
+.read-time p svg {
     width: 15px;
     height: 15px;
     fill: #d8d4cf;
@@ -157,12 +158,17 @@ main .main-section {
     height: 100px;
     width: 100px;
     border-radius: 5px;
+    object-fit: cover;
+}
+
+.blog-image img:hover {
+    filter: brightness(0.8);
 }
 
 main .sidebar-section {
     padding-top: 50px;
     height: 100%;
-    width: 30%;
+    width: 35%;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -228,7 +234,7 @@ main .sidebar-section {
     gap: 5px;
 }
 
-.sidebar-blog-title h1{
+.sidebar-blog-title h1 {
     font-size: 1rem;
     font-weight: 600;
 }
@@ -270,4 +276,22 @@ main .sidebar-section {
 .github-link svg {
     width: 25px !important;
     height: 25px !important;
+}
+
+@media only screen and (max-width: 768px) {
+    main {
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 50px;
+    }
+
+    main .main-section {
+        border: none;
+    }
+
+    main .sidebar-section {
+        display: none;
+    }
+
 }

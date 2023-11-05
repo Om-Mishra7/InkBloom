@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<!--
+	Copyright (c) 2014-2023, CKSource Holding sp. z o.o. All rights reserved.
+	This file is licensed under the terms of the MIT License (see LICENSE.md).
+-->
+
+<html lang="en" dir="ltr">
+  <head>
+    {% include 'partials/header.html' %}
+    <title>InkBloom | ProjectRexa</title>
+    <link rel="stylesheet" href="/static/css/create_blog.css" />
+  </head>
+  <body>
+    {% include 'partials/navbar.html' %}
+    <script
+      src="https://cdn.tiny.cloud/1/x2rul9i22r3mqcjuurqulrixds9c95pvp4w393nuzgvn2ebt/tinymce/6/tinymce.min.js"
+      referrerpolicy="origin"
+    ></script>
+    <br />
+    <br />
+    <br />
+    <br />
+    <br />
+    <form id="new-post-form" enctype="multipart/form-data">
+      <div class="form-top">
+        <input
+          type="text"
+          id="title"
+          name="title"
+          placeholder="Enter blog title"
+        />
+        <input
+          type="text"
+          id="tags"
+          name="tags"
+          placeholder="Enter blog tags (comma separated)"
+        />
+      </div>
+      <div class="form-top">
+        <div class="container">
+          <input type="file" id="file-input" />
+          <label for="file-input">
+            <i class="fa-solid fa-arrow-up-from-bracket"></i>
+            &nbsp; Choose cover image for blog
+          </label>
+        </div>
+        <select id="category" name="category">
+          <option value="blog" selected>Blog</option>
+          <option value="dev-log">Dev Log</option>
+        </select>
+      </div>
+      <textarea
+        id="summary"
+        class="summary"
+        name="summary"
+        placeholder="Enter blog summary"
+      ></textarea>
+      <div class="editor">
+        <textarea id="naked">
+          <p>Enter blog content</p>
+      </textarea
+        >
+      </div>
+      <div class="form-bottom">
+        <input type="submit" value="Publish" />
+      </div>
+    </form>
+
+    <script src="/static/js/create_blog.js"></script>
+  </body>
+</html>
