@@ -11,7 +11,7 @@ This file contains the server side code for the web application InkBloom, a powe
 # Importing the required libraries
 
 import os
-from bson.objectid import ObjectId
+from bson import ObjectId
 import secrets
 import datetime
 import json
