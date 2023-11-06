@@ -11,6 +11,7 @@ This file contains the server side code for the web application InkBloom, a powe
 # Importing the required libraries
 
 import os
+from bson.objectid import ObjectId
 import secrets
 import datetime
 import json
@@ -26,6 +27,7 @@ from flask import (
     request,
     session,
     abort,
+    jsonify,
 )
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
@@ -93,7 +95,13 @@ def index():
     """
     This function renders the home page of the application.
     """
-    blogs = DATABASE["BLOGS"].find()
+    session["logged_in"] = True
+    session["user_id"] = 96434205
+    session["user_name"] = "Om Mishra"
+    session["user_email"] = "admin@projectrexa.dedyn.io"
+    session["profile_pic"] = "https://avatars.githubusercontent.com/u/96434205?v=4"
+    session["admin"] = True
+    blogs = DATABASE["BLOGS"].find().sort("_id", -1).limit(10)
     featured_blogs = DATABASE["BLOGS"].find({"featured": True}).limit(5)
     return render_template("index.html", blogs=blogs, featured_blogs=featured_blogs, service_version=service_version)
 
@@ -141,6 +149,13 @@ def create_blog():
         blog_featured = True if "featured" in blog_tags else False
         blog_tags = [tag for tag in blog_tags if tag != "featured"]
 
+        while True:
+            if DATABASE["BLOGS"].find_one({"slug": blog_slug}):
+                blog_slug = blog_slug + "-" + secrets.token_hex(4)
+            else:
+                break
+
+
         if category == "dev-log":
             blog_content = (
                 f"<h1> {datetime.datetime.now().strftime('%d %B %Y')} </h1> <br>"
@@ -148,8 +163,7 @@ def create_blog():
             )
 
         if blog_cover_image.filename == "":
-            flash("No file found!", "error")
-            return redirect("/admin/blogs/create")
+            return {"status": "error", "message": "No file found!"}, 400
         if blog_cover_image.content_type not in [
             "image/png",
             "image/jpeg",
@@ -158,21 +172,26 @@ def create_blog():
             "image/webp",
             "svg+xml",
         ]:
-            flash("Invalid file type!", "error")
-            return redirect("/admin/blogs/create")
+            return {"status": "error", "message": "Invalid file type!"}, 400
         if blog_cover_image:
-            response = requests.post(
-                "http://ather.api.projectrexa.dedyn.io/upload",
-                files={"file": blog_cover_image.read()},
-                data={
-                    "key": f"projectrexa/blog/assets/{secrets.token_hex(16)}",
-                    "content_type": blog_cover_image.content_type,
-                    "public": "true",
-                },
-                headers={"X-Authorization": os.getenv("ATHER_API_KEY")},
-                timeout=10,
-            ).json()
-            blog_cover_image = response["access_url"]
+            try:
+                response = requests.post(
+                    "http://ather.api.projectrexa.dedyn.io/upload",
+                    files={"file": blog_cover_image.read()},
+                    data={
+                        "key": f"projectrexa/blog/assets/{secrets.token_hex(16)}",
+                        "content_type": blog_cover_image.content_type,
+                        "public": "true",
+                    },
+                    headers={"X-Authorization": os.getenv("ATHER_API_KEY")},
+                    timeout=10,
+                ).json()
+                blog_cover_image = response["access_url"]
+            except Exception as e:
+                return {
+                    "status": "error",
+                    "message": "Something went wrong while uploading the file!",
+                }, 500
 
         blog = {
             "title": blog_title,
@@ -195,8 +214,7 @@ def create_blog():
             "created_at": datetime.datetime.now(),
         }
         DATABASE["BLOGS"].insert_one(blog)
-        flash("Blog created successfully!", "success")
-        return redirect(f"/blogs/{blog_slug}"), 302
+        return {"status": "success", "message": "Blog created successfully!", "blog_slug": blog_slug}, 200
     if session["logged_in"] and session["admin"]:
         return render_template("create_blog.html")
 
@@ -410,18 +428,16 @@ def post_blog_comments(blog_id):
 
 
 @app.route("/api/v1/blogs/<last_blog_id>", methods=["GET"])
-@limiter.limit("30/minute")
-def get_blog(last_blog_id):
+def get_blogs(last_blog_id):
     """
-    This function returns a blog post.
+    This function returns a list of blog posts.
     """
-
-    blogs = DATABASE["BLOGS"].find({"_id": {"$lt": last_blog_id}}).limit(10)
-    if blogs:
-        return list(blogs), 200
-    return [], 200
-
-
+    # blogs = DATABASE["BLOGS"].find({"_id": {"$lt": ObjectId(last_blog_id)}}).limit(5)
+    # if blogs:
+    #     # Convert ObjectId to strings for each blog in the result
+    #     blogs = [{"_id": str(blog["_id"]), "title": blog["title"], "content": blog["content"]} for blog in blogs]
+    #     return jsonify(blogs), 200
+    abort(404)
 
 @app.route("/api/v1/user-content/upload", methods=["POST"])
 @limiter.limit("30/minute")

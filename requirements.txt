@@ -1,4 +1,5 @@
 requests
+bson
 python-dotenv
 redis
 flask

@@ -37,8 +37,8 @@ newPostForm.addEventListener("submit", (e) => {
   })
     .then((res) => res.json())
     .then((data) => {
-      if (data.status == 200) {
-        window.location.href = "/blog/" + data.blog_id;
+      if (data.status == "success") {
+        window.location.href = "/blogs/" + data.blog_slug;
       } else {
         alert(data.message);
       }
