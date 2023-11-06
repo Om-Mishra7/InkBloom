@@ -1,9 +1,8 @@
 requests
-bson
 python-dotenv
 redis
 flask
 Flask-Session
 Flask-Limiter
-pymongo
-
+bson==0.5.10
+pymongo==4.3.3
