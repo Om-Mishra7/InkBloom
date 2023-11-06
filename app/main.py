@@ -409,19 +409,18 @@ def post_blog_comments(blog_id):
     abort(400)
 
 
-@app.route("/api/v1/blog", methods=["GET"])
+@app.route("/api/v1/blogs/<last_blog_id>", methods=["GET"])
 @limiter.limit("30/minute")
-def get_blog():
+def get_blog(last_blog_id):
     """
     This function returns a blog post.
     """
-    if request.args.get("pagination"):
-        pagination = int(request.args.get("pagination"))
-        blogs = DATABASE["BLOGS"].find().skip(pagination).limit(10)
-    else:
-        blogs = DATABASE["BLOGS"].find().limit(10)
 
-    return list(blogs), 200
+    blogs = DATABASE["BLOGS"].find({"_id": {"$lt": last_blog_id}}).limit(10)
+    if blogs:
+        return list(blogs), 200
+    return [], 200
+
 
 
 @app.route("/api/v1/user-content/upload", methods=["POST"])
