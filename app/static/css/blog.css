@@ -97,6 +97,22 @@ main {
     border-radius: 5px;
 }
 
+pre {
+    width: 100%;
+    overflow-x: auto;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: flex-start;
+}
+
+pre code {
+    border-radius: 5px;
+    max-width: 100%;
+    margin: 1em 0;
+}
+
+
 @media screen and (max-width: 768px) {
     main {
         width: 90%;

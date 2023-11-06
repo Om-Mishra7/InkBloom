@@ -8,6 +8,15 @@
   </head>
   <body>
     {% include 'partials/navbar.html' %}
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/monokai-sublime.min.css"
+    />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+
+    <script>
+      hljs.highlightAll();
+    </script>
     <main>
       <div class="blog-meta">
         <h1 class="blog-title">{{ blog.title }}</h1>

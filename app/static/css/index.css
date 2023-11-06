@@ -296,6 +296,7 @@ main .sidebar-section {
 
     main .main-section {
         border: none;
+        padding: 0 10px;
     }
 
     main .sidebar-section {

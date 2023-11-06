@@ -133,22 +133,25 @@ def create_blog():
     This function renders the create blog page of the application.
     """
     if request.method == "POST" and session["logged_in"] and session["admin"]:
-        blog_title = request.form["title"]
-        blog_content = request.form["content"]
-        category = request.form["category"]
-        blog_tags = request.form["tags"].split(",")
-        for tag in blog_tags:
-            if tag == "":
-                blog_tags.remove(tag)
-            else:
-                blog_tags[blog_tags.index(tag)] = tag.strip().lower()
-        blog_summary = request.form["summary"]
-        blog_slug = blog_title.replace(" ", "-").lower()
-        blog_cover_image = request.files["cover_image"]
-        authour = session["user_id"]
-        authour_name = session["user_name"]
-        blog_featured = True if "featured" in blog_tags else False
-        blog_tags = [tag for tag in blog_tags if tag != "featured"]
+        try:
+            blog_title = request.form["title"]
+            blog_content = request.form["content"]
+            category = request.form["category"]
+            blog_tags = request.form["tags"].split(",")
+            for tag in blog_tags:
+                if tag == "":
+                    blog_tags.remove(tag)
+                else:
+                    blog_tags[blog_tags.index(tag)] = tag.strip().lower()
+            blog_summary = request.form["summary"]
+            blog_slug = blog_title.replace(" ", "-").lower()
+            blog_cover_image = request.files["cover_image"]
+            authour = session["user_id"]
+            authour_name = session["user_name"]
+            blog_featured = True if "featured" in blog_tags else False
+            blog_tags = [tag for tag in blog_tags if tag != "featured"]
+        except Exception as e:
+            return {"status": "error", "message": "Please fill all the fields correctly - " + str(e)}, 400
 
         while True:
             if DATABASE["BLOGS"].find_one({"slug": blog_slug}):
@@ -192,6 +195,8 @@ def create_blog():
                     "status": "error",
                     "message": "Something went wrong while uploading the file!",
                 }, 500
+        else:
+            return {"status": "error", "message": "No cover image found!"}, 400
 
         blog = {
             "title": blog_title,
