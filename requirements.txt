@@ -4,5 +4,5 @@ redis
 flask
 Flask-Session
 Flask-Limiter
-bson==0.5.10
-pymongo==4.3.3
+pymongo
+bson
