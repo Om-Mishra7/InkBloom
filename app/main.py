@@ -11,13 +11,13 @@ This file contains the server side code for the web application InkBloom, a powe
 # Importing the required libraries
 
 import os
-from bson import ObjectId
 import secrets
 import datetime
 import json
 import requests
 from dotenv import load_dotenv
 import redis
+from bson import ObjectId
 from flask import (
     Flask,
     render_template,
@@ -83,9 +83,11 @@ limiter = Limiter(
 def format_timestamp(s):
     return datetime.datetime.strptime(s, "%Y-%m-%d %H:%M:%S.%f").strftime("%d %B %Y")
 
+
 @app.context_processor
 def app_version():
     return dict(service_version=service_version)
+
 
 # Application User Routes
 
@@ -97,7 +99,12 @@ def index():
     """
     blogs = DATABASE["BLOGS"].find().sort("_id", -1).limit(10)
     featured_blogs = DATABASE["BLOGS"].find({"featured": True}).limit(5)
-    return render_template("index.html", blogs=blogs, featured_blogs=featured_blogs, service_version=service_version)
+    return render_template(
+        "index.html",
+        blogs=blogs,
+        featured_blogs=featured_blogs,
+        service_version=service_version,
+    )
 
 
 @app.route("/blogs", methods=["GET"])
@@ -148,7 +155,6 @@ def create_blog():
                 blog_slug = blog_slug + "-" + secrets.token_hex(4)
             else:
                 break
-
 
         if category == "dev-log":
             blog_content = (
@@ -208,7 +214,11 @@ def create_blog():
             "created_at": datetime.datetime.now(),
         }
         DATABASE["BLOGS"].insert_one(blog)
-        return {"status": "success", "message": "Blog created successfully!", "blog_slug": blog_slug}, 200
+        return {
+            "status": "success",
+            "message": "Blog created successfully!",
+            "blog_slug": blog_slug,
+        }, 200
     if session["logged_in"] and session["admin"]:
         return render_template("create_blog.html")
 
@@ -426,12 +436,31 @@ def get_blogs(last_blog_id):
     """
     This function returns a list of blog posts.
     """
-    # blogs = DATABASE["BLOGS"].find({"_id": {"$lt": ObjectId(last_blog_id)}}).limit(5)
-    # if blogs:
-    #     # Convert ObjectId to strings for each blog in the result
-    #     blogs = [{"_id": str(blog["_id"]), "title": blog["title"], "content": blog["content"]} for blog in blogs]
-    #     return jsonify(blogs), 200
+    blogs = DATABASE["BLOGS"].find({"_id": {"$lt": ObjectId(last_blog_id)}}).limit(5)
+    if blogs is not None:
+        # Convert ObjectId to strings for each blog in the result
+        blogs = [
+            {
+                "_id": str(blog["_id"]),
+                "title": blog["title"],
+                "summay": blog["summary"],
+                "slug": blog["slug"],
+                "cover_image": blog["cover_image"],
+                "authour": blog["authour"],
+                "authour_name": blog["authour_name"],
+                "authour_profile_pic": blog["authour_profile_pic"],
+                "featured": blog["featured"],
+                "read_time": blog["read_time"],
+                "views": blog["views"],
+                "likes": blog["likes"],
+                "comments_count": blog["comments_count"],
+                "created_at": blog["created_at"],
+            }
+            for blog in blogs
+        ]
+        return jsonify(blogs), 200
     abort(404)
+
 
 @app.route("/api/v1/user-content/upload", methods=["POST"])
 @limiter.limit("30/minute")
