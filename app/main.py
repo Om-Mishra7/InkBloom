@@ -95,12 +95,6 @@ def index():
     """
     This function renders the home page of the application.
     """
-    session["logged_in"] = True
-    session["user_id"] = 96434205
-    session["user_name"] = "Om Mishra"
-    session["user_email"] = "admin@projectrexa.dedyn.io"
-    session["profile_pic"] = "https://avatars.githubusercontent.com/u/96434205?v=4"
-    session["admin"] = True
     blogs = DATABASE["BLOGS"].find().sort("_id", -1).limit(10)
     featured_blogs = DATABASE["BLOGS"].find({"featured": True}).limit(5)
     return render_template("index.html", blogs=blogs, featured_blogs=featured_blogs, service_version=service_version)
