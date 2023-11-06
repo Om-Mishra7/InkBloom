@@ -443,8 +443,9 @@ def get_blogs(last_blog_id):
             {
                 "_id": str(blog["_id"]),
                 "title": blog["title"],
-                "summay": blog["summary"],
+                "summary": blog["summary"],
                 "slug": blog["slug"],
+                "tags": blog["tags"],
                 "cover_image": blog["cover_image"],
                 "authour": blog["authour"],
                 "authour_name": blog["authour_name"],
@@ -454,7 +455,7 @@ def get_blogs(last_blog_id):
                 "views": blog["views"],
                 "likes": blog["likes"],
                 "comments_count": blog["comments_count"],
-                "created_at": blog["created_at"],
+                "created_at": blog["created_at"].strftime("%d %B %Y"),
             }
             for blog in blogs
         ]

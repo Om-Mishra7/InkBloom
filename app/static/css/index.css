@@ -302,4 +302,11 @@ main .sidebar-section {
         display: none;
     }
 
+    .blog-metadata p, .blog-title , .blog-summary, .blog-tags p, .read-time p, .blog-views p {
+        font-size: 0.7rem;
+    }
+
+    
+    
+
 }

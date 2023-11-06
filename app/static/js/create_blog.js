@@ -3,9 +3,9 @@ tinymce.init({
   skin: "naked",
   icons: "small",
   toolbar_location: "bottom",
-  plugins: "lists code table codesample link autolink image imagetools media charmap hr anchor pagebreak nonbreaking",
+  plugins: "lists code table codesample link autolink image imagetools media charmap hr anchor pagebreak nonbreaking preview searchreplace wordcount visualblocks visualchars fullscreen insertdatetime media table contextmenu paste help",
   toolbar:
-    "blocks | bold italic underline strikethrough bullist link codesample | alignleft aligncenter alignright alignjustify | outdent indent | image media | forecolor backcolor | charmap emoticons | hr pagebreak | removeformat code | undo redo | fullscreen",
+    "blocks | bold italic underline strikethrough bullist link codesample | alignleft aligncenter alignright alignjustify | outdent indent | image media | forecolor backcolor | charmap emoticons | hr pagebreak | removeformat code | undo redo | fullscreen preview | help | insertfile image media template link anchor codesample | a11ycheck ltr rtl | showcomments addcomment | visualchars visualblocks nonbreaking table",
   menubar: false,
   images_upload_url: "/api/v1/user-content/upload",
   statusbar: false,
