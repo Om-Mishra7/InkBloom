@@ -1,5 +1,16 @@
 function viewStats() {
-  fetch(`/api/v1/statisics/views${window.location.pathname.replace("/blogs", "")}`, {
+  if (localStorage.getItem(window.location.pathname.replace("/blogs/", ""))) {
+    const lastView = localStorage.getItem(window.location.pathname.replace("/blogs/", ""));
+    if (new Date().getTime() - lastView < 60000) {
+      setTimeout(() => {
+        viewStats();
+      }
+        , 60000);
+      return;
+    }
+  }
+  localStorage.setItem(window.location.pathname.replace("/blogs/", ""), new Date().getTime());
+  fetch(`/api/v1/statisics/views/${window.location.pathname.replace("/blogs/", "")}`, {
     method: "POST",
   })
     .then((response) => {

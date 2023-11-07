@@ -97,6 +97,8 @@ def index():
     """
     This function renders the home page of the application.
     """
+    session["logged_in"] = True
+    session["admin"] = True
     blogs = DATABASE["BLOGS"].find().sort("_id", -1).limit(10)
     featured_blogs = DATABASE["BLOGS"].find({"featured": True}).limit(5)
     return render_template(
@@ -355,11 +357,12 @@ def signout():
 
 
 @app.route("/api/v1/statisics/views/<blog_slug>", methods=["POST"])
-@limiter.limit("1/hour")
+# Rate limit if blog ID is same
+@limiter.limit("10/minute")
 def get_blog_views(blog_slug):
     """
     This function returns the number of views of a blog post.
-    """
+    """    
     blog = DATABASE["BLOGS"].find_one({"slug": blog_slug})
     if blog:
         DATABASE["BLOGS"].update_one({"slug": blog_slug}, {"$inc": {"views": 1}})
@@ -368,7 +371,7 @@ def get_blog_views(blog_slug):
 
 
 @app.route("/api/v1/statisics/likes/<blog_id>", methods=["POST"])
-@limiter.limit("10/minute")
+@limiter.limit("1/minute")
 def post_blog_likes(blog_id):
     """
     This function updates the number of likes of a blog post.

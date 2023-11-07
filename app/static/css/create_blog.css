@@ -1,5 +1,11 @@
 body {
 	font-family: 'Roboto', sans-serif;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	margin: 0;
+	padding: 0;
 }
 
 .editor {
@@ -19,9 +25,8 @@ body {
 }
 
 form {
-	padding: 0 100px;
 	display: flex;
-	width: 100%;
+	width: 60%;
 	flex-direction: column;
 	align-items: center;
 	justify-content: center;
@@ -30,11 +35,12 @@ form {
 }
 
 form input {
-	width: 100%;
-	height: 40px;
+	width: 47%;
+	height: 45px;
 	padding: 0 15px;
 	border: 1px solid rgb(52, 56, 58);
 	font: inherit;
+	border-radius: 5px;
 }
 
 form input:focus {
@@ -43,11 +49,12 @@ form input:focus {
 
 form textarea {
 	width: 100%;
-	height: 100px;
+	height: 150px;
 	padding: 15px;
 	border: 1px solid rgb(52, 56, 58);
 	resize: none;
 	font: inherit;
+	border-radius: 5px;
 }
 
 form textarea:focus {
@@ -67,12 +74,13 @@ form .form-top {
 
 input[type='submit'] {
 	width: 100%;
-	height: 40px;
+	height: 45px;
 	border: none;
 	background-color: rgb(52, 56, 58);
 	color: white;
 	font: inherit;
 	cursor: pointer;
+	border-radius: 5px;
 }
 
 input[type='submit']:hover {
@@ -80,19 +88,20 @@ input[type='submit']:hover {
 }
 
 input[type='file'] {
-	width: 100%;
-	height: 40px;
+	height: 45px;
 	font: inherit;
 	border: none;
+	border-radius: 5px;
 }
 
 select {
-	width: 99%;
-	height: 40px;
+	width: 47%;
+	height: 45px;
 	padding: 0 0 0 10px;
-	border: 1px solid rgb(52, 56, 58);
+	border: 1px solid rgb(52, 56, 58); 
 	font: inherit;
 	margin: 0;
+	border-radius: 5px;
 }
 
 select:focus {
@@ -104,9 +113,10 @@ select option {
 }
 
 .container {
-	width: 100%;
+	width: 47%;
 	margin: 0;
 	padding: 0;
+	border-radius: 5px;
 }
 
 input[type="file"] {
@@ -114,6 +124,8 @@ input[type="file"] {
 }
 
 label {
+	width: 47%;
+	height: 45px;
 	display: block;
 	position: relative;
 	background-color: transparent;
@@ -126,4 +138,32 @@ label {
 	padding: 10px 0;
 	margin: auto;
 	cursor: pointer;
+	border-radius: 5px;
+}
+
+label i {
+	text-align: left;
+}
+
+
+@media only screen and (max-width: 800px) {
+
+	form {
+		width: 100%;
+		padding: 0 20px;
+	}
+
+	form input {
+		width: 100%;
+	}
+
+	.container {
+		width: 100%;
+	}
+
+	select {
+		width: 100%;
+	}
+
+
 }
