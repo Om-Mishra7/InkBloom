@@ -2,11 +2,13 @@ function toggleDropdown() {
   if (document.getElementById("profile-dropdown").style.display == "none") {
     document.getElementById("profile-dropdown").style.display = "flex";
 
-    document
-      .getElementById("profile-dropdown")
-      .addEventListener("mouseleave", function () {
-        document.getElementById("profile-dropdown").style.display = "none";
-      });
+    document.addEventListener("click", function (event) {
+      let profileDropdown = document.getElementById("profile-dropdown");
+      if (event.target != profileDropdown && event.target != profilePic) {
+        profileDropdown.style.display = "none";
+      }
+    }
+    );
   } else {
     document.getElementById("profile-dropdown").style.display = "none";
   }
@@ -61,3 +63,10 @@ searchBar.addEventListener("keyup", function (event) {
     searchResults.style.display = "none";
   }
 });
+
+let profilePic = document.getElementById("profile-pic");
+profilePic.addEventListener("click", function () {
+  toggleDropdown();
+});
+
+document.getElementById("profile-dropdown").style.display = "none";
