@@ -42,8 +42,11 @@ searchBar.addEventListener("keyup", function (event) {
                 result.innerHTML = element.title;
                 searchResults.appendChild(result);
               });
-              searchResults.addEventListener("mouseleave", function () {
-                searchResults.style.display = "none";
+              document.addEventListener("click", function (event) {
+                let searchResults = document.getElementById("search-results-page");
+                if (event.target != searchResults) {
+                  searchResults.style.display = "none";
+                }
               });
             });
         }
@@ -52,8 +55,7 @@ searchBar.addEventListener("keyup", function (event) {
         console.error("Error:", error);
       });
   }
-
-  if (searchBar.value.length == 0) {
+  else {
     let searchResults = document.getElementById("search-results");
     searchResults.innerHTML = "";
     searchResults.style.display = "none";

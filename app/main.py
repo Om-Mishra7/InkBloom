@@ -350,7 +350,12 @@ def signout():
     session.clear()
     return redirect(url_for("index"))
 
-# @app.route("/search")
+@app.route("/search")
+def search_page():
+    """
+    This function renders the search page of the application.
+    """
+    return render_template("search.html")
 
 
 
