@@ -15,7 +15,6 @@ main {
     flex-direction: row;
     justify-content: flex-start;
     align-items: center;
-    margin-left: 10px;
     border-radius: 5px;
     background-color: #272727;
 }
@@ -55,7 +54,6 @@ main {
     border-radius: 5px;
     width: 80%;
     z-index: 1;
-    margin-left: 10px;
     display: none;
 }
 

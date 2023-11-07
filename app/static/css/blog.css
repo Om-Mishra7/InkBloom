@@ -3,6 +3,7 @@ body {
     flex-direction: column;
     align-items: center;
     justify-content: center;
+    width: 100vw;s
 }
 
 img {
@@ -14,6 +15,7 @@ main {
     margin-top: 100px;
     margin-bottom: 50px;
     width: 60%;
+    max-width: 100%;
 }
 
 .blog-meta {
@@ -114,8 +116,10 @@ pre code {
 
 
 @media screen and (max-width: 800px) {
+
     main {
         width: 90%;
+        padding: 0 10px;
     }
 
     .blog-cover-image {
