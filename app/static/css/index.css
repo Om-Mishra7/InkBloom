@@ -286,6 +286,10 @@ main .sidebar-section {
     font-family: monospace;
 }
 
+.page-footer{
+    display: none;
+}
+
 @media only screen and (max-width: 800px) {
     main {
         flex-direction: column;
@@ -307,6 +311,11 @@ main .sidebar-section {
         font-size: 0.7rem;
     }
 
+    .page-footer{
+        display: block;
+        width: 100%;
+        height: 50px;
+    }
     
     
 
