@@ -353,6 +353,34 @@ def signout():
 
 # Application API Routes
 
+@app.route("/api/v1/search", methods=["GET"])
+def search():
+    query = request.args.get("query")
+    if query and len(query) > 2:
+        blogs = DATABASE["BLOGS"].find(
+            {
+                "$or": [
+                    {"title": {"$regex": query, "$options": "i"}},
+                    {"tags": {"$regex": query, "$options": "i"}},
+                    {"summary": {"$regex": query, "$options": "i"}},
+                ]
+            }
+        ).limit(3)
+        if blogs:
+            blogs = [
+                {
+                    "_id": str(blog["_id"]),
+                    "title": blog["title"],
+                    "slug": blog["slug"],
+                }
+                for blog in blogs
+            ]
+            if len(blogs) < 1:
+                return jsonify([]), 404
+            return jsonify(blogs), 200
+    else:
+        return jsonify([]), 404
+
 
 @app.route("/api/v1/statisics/views/<blog_slug>", methods=["POST"])
 # Rate limit if blog ID is same
