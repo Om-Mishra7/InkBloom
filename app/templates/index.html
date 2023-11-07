@@ -4,7 +4,7 @@
     {% include 'partials/header.html' %}
     <title>InkBloom | ProjectRexa</title>
     <link rel="stylesheet" href="/static/css/index.css" />
-    <script src="/static/js/index.js"></script>
+    <script src="/static/js/index.js" defer></script>
   </head>
   <body>
     {% include 'partials/navbar.html' %}
@@ -88,9 +88,10 @@
           </div>
         </div>
         {% endfor %}
-        {% include 'partials/footer.html' %}
 
       </div>
+      {% include 'partials/footer.html' %}
+
 
       <div class="sidebar-section">
         <p class="sidebar-title">Featured Blogs</p>

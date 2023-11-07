@@ -39,6 +39,10 @@ main .main-section {
     gap: 50px;
 }
 
+.blog:last-child {
+    border-bottom: none;
+}
+
 .blog-details {
     display: flex;
     flex-direction: column;
@@ -287,7 +291,7 @@ main .sidebar-section {
 }
 
 .page-footer{
-    display: none;
+    display: none !important;
 }
 
 @media only screen and (max-width: 800px) {
@@ -312,9 +316,7 @@ main .sidebar-section {
     }
 
     .page-footer{
-        display: block;
-        width: 100%;
-        height: 50px;
+        display: flex !important;
     }
     
     
