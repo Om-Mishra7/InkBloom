@@ -20,9 +20,6 @@ function viewStats() {
         throw new Error("Error");
       }
     })
-    .then((data) => {
-      console.log(data);
-    })
     .catch((error) => {
       console.log(error);
       setTimeout(() => {
@@ -32,5 +29,7 @@ function viewStats() {
     });
 }
 
+hljs.highlightAll(); // Ensure that the code blocks are still syntax highlighted
+
 viewStats();
-console.log("Hello World");
+

@@ -80,6 +80,7 @@ main {
     align-items: flex-start;
     justify-content: flex-start;
     gap: 1em;
+    width: 100%;
 }
 
 .blog-cover-image {
@@ -110,7 +111,7 @@ pre {
 
 pre code {
     border-radius: 5px;
-    max-width: 100%;
+    width: 100%;
     margin: 1em 0;
 }
 

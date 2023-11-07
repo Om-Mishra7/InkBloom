@@ -4,7 +4,7 @@
     {% include 'partials/header.html' %}
     <title>InkBloom | ProjectRexa</title>
     <link rel="stylesheet" href="/static/css/blog.css" />
-    <script src="/static/js/blog.js"></script>
+    <script src="/static/js/blog.js" defer></script>
   </head>
   <body>
     {% include 'partials/navbar.html' %}
@@ -13,10 +13,6 @@
       href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/monokai-sublime.min.css"
     />
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
-
-    <script>
-      hljs.highlightAll();
-    </script>
     <main>
       <div class="blog-meta">
         <h1 class="blog-title">{{ blog.title }}</h1>
