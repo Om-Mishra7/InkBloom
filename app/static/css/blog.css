@@ -148,12 +148,16 @@ form  {
 }
 
 input[type="text"], textarea {
+    font: inherit;
+    font-size: .8rem;
     width: 100%;
     height: 200px;
     padding: 10px;
     border-radius: 5px;
     border: 1px solid #aaa;
-    margin-bottom: 1em;
+    margin-bottom: 1rem;
+    background-color: #2c2c2c;
+    color: #fff;
 }
 
 
@@ -167,9 +171,10 @@ input[type="text"], textarea {
     display: flex;
     flex-direction: row;
     align-items: center;
-    justify-content: space-between;
+    justify-content: flex-end;
     gap: 1em;
 }
+
 
 .comment-form-footer button {
     padding: 10px 20px;
@@ -177,7 +182,7 @@ input[type="text"], textarea {
     border: none;
     background-color: #2c2c2c;
     color: #fff;
-    font-size: 1rem;
+    font-size: .8rem;
     cursor: pointer;
 }
 
@@ -185,6 +190,104 @@ input[type="text"], textarea {
     text-align: justify;
     font-size: .8rem;
     color: #aaa;
+}
+
+
+.blog-comments-list {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: flex-start;
+    gap: 1em;
+    margin-top: 20px;
+}
+
+.blog-comment {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: flex-start;
+    gap: 5px;
+    border: 1px solid rgb(52, 56, 58);
+    border-radius: 5px;
+    background-color: #2c2c2c;
+}
+
+.blog-comment-author {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 5px;
+    padding: 10px 10px 0 10px;
+}
+
+.blog-comment-author img {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+}
+
+.blog-comment-author-info {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 5px;
+}
+
+.blog-comment-author-name {
+    font-size: .8rem;   
+    color: #fff;
+}
+
+.moderator-comment .blog-comment-author-name {
+    color: #bb2124;
+}
+
+.blog-comment-date {
+    font-size: .8rem;
+    color: #aaa;
+}
+
+.blog-comment-content {
+    text-align: justify;
+    padding: 0 10px 10px 10px;
+    font-size: .8rem;
+    color: #fff;
+}
+
+.blog-comment-actions {
+    width: 100%;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 1em;
+    padding: 0 10px 10px 10px;
+
+}
+
+.delete-comment {
+    font-size: .8rem;
+    cursor: pointer;
+    padding: 8px 10px;
+    color: #000;
+    background-color: #fff;
+    border: none;
+    border-radius: 5px;
+}
+
+.block-user {
+    font-size: .8rem;
+    cursor: pointer;
+    padding: 8px 10px;
+    color: #fff;
+    background-color: #bb2124;
+    border: none;
+    border-radius: 5px;
 }
 
 @media screen and (max-width: 800px) {

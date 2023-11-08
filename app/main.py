@@ -33,6 +33,7 @@ from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from flask_session import Session
 from pymongo import MongoClient
+from purgo_malum import client
 
 load_dotenv()  # Loading the environment variables
 
@@ -89,6 +90,13 @@ def app_version():
     return dict(service_version=service_version)
 
 
+def profanity_check(comment):
+    """
+    This function checks for profanity in the comment.
+    """
+    return client.contains_profanity(comment)
+
+
 # Application User Routes
 
 
@@ -122,8 +130,9 @@ def blog(blog_slug):
     This function renders the blog page of the application.
     """
     blog = DATABASE["BLOGS"].find_one({"slug": blog_slug})
+    comments = DATABASE["COMMENTS"].find({"blog_slug": blog_slug})
     if blog:
-        return render_template("blog.html", blog=blog)
+        return render_template("blog.html", blog=blog, comments=comments)
     abort(404)
 
 
@@ -151,7 +160,10 @@ def create_blog():
             blog_featured = True if "featured" in blog_tags else False
             blog_tags = [tag for tag in blog_tags if tag != "featured"]
         except Exception as e:
-            return {"status": "error", "message": "Please fill all the fields correctly - " + str(e)}, 400
+            return {
+                "status": "error",
+                "message": "Please fill all the fields correctly - " + str(e),
+            }, 400
 
         while True:
             if DATABASE["BLOGS"].find_one({"slug": blog_slug}):
@@ -212,13 +224,21 @@ def create_blog():
             "featured": blog_featured,
             "read_time": len(blog_content.split(" ")) // 300,
             "views": 0,
-            "likes": 0,
-            "liked_by": [],
-            "comments": [],
             "comments_count": 0,
             "created_at": datetime.datetime.now(),
         }
         DATABASE["BLOGS"].insert_one(blog)
+        DATABASE["COMMENTS"].insert_one(
+            {
+                "blog_slug": blog_slug,
+                "comment": "Please do not harass or abuse anyone in the comments section. We have a zero tolerance policy for harassment and abuse. If you are found to be violating our policy, you will be blocked from posting further comments.",
+                "commented_by": "Moderation Bot",
+                "user_name": "Moderation Bot",
+                "user_profile_pic": "https://projectrexa.dedyn.io/assets/images/logo.png",
+                "user_role": "admin",
+                "created_at": datetime.datetime.now(),
+            }
+        )
         return {
             "status": "success",
             "message": "Blog created successfully!",
@@ -323,6 +343,7 @@ def github_callback():
                     "email": user_data["email"],
                     "profile_pic": user_data["avatar_url"],
                     "admin": False,
+                    "blocked": False,
                     "created_at": datetime.datetime.now(),
                 }
             )
@@ -350,6 +371,7 @@ def signout():
     session.clear()
     return redirect(url_for("index"))
 
+
 @app.route("/search")
 def search_page():
     """
@@ -358,22 +380,26 @@ def search_page():
     return render_template("search.html")
 
 
-
 # Application API Routes
+
 
 @app.route("/api/v1/search", methods=["GET"])
 def search():
     query = request.args.get("query")
     if query and len(query) > 2:
-        blogs = DATABASE["BLOGS"].find(
-            {
-                "$or": [
-                    {"title": {"$regex": query, "$options": "i"}},
-                    {"tags": {"$regex": query, "$options": "i"}},
-                    {"summary": {"$regex": query, "$options": "i"}},
-                ]
-            }
-        ).limit(3)
+        blogs = (
+            DATABASE["BLOGS"]
+            .find(
+                {
+                    "$or": [
+                        {"title": {"$regex": query, "$options": "i"}},
+                        {"tags": {"$regex": query, "$options": "i"}},
+                        {"summary": {"$regex": query, "$options": "i"}},
+                    ]
+                }
+            )
+            .limit(3)
+        )
         if blogs:
             blogs = [
                 {
@@ -388,89 +414,6 @@ def search():
             return jsonify(blogs), 200
     else:
         return jsonify([]), 404
-
-
-@app.route("/api/v1/statisics/views/<blog_slug>", methods=["POST"])
-# Rate limit if blog ID is same
-@limiter.limit("10/minute")
-def get_blog_views(blog_slug):
-    """
-    This function returns the number of views of a blog post.
-    """    
-    blog = DATABASE["BLOGS"].find_one({"slug": blog_slug})
-    if blog:
-        DATABASE["BLOGS"].update_one({"slug": blog_slug}, {"$inc": {"views": 1}})
-        return str(blog["views"])
-    abort(404)
-
-
-@app.route("/api/v1/statisics/likes/<blog_id>", methods=["POST"])
-@limiter.limit("1/minute")
-def post_blog_likes(blog_id):
-    """
-    This function updates the number of likes of a blog post.
-    """
-    if request.method == "POST" and session["logged_in"]:
-        if DATABASE["BLOGS"].find_one({"_id": blog_id, "liked_by": session["user_id"]}):
-            DATABASE["BLOGS"].update_one(
-                {"_id": blog_id}, {"$pull": {"liked_by": session["user_id"]}}
-            )
-            DATABASE["BLOGS"].update_one({"_id": blog_id}, {"$inc": {"likes": -1}})
-        else:
-            DATABASE["BLOGS"].update_one(
-                {"_id": blog_id}, {"$push": {"liked_by": session["user_id"]}}
-            )
-            DATABASE["BLOGS"].update_one({"_id": blog_id}, {"$inc": {"likes": 1}})
-        return {"status": "success", "message": "Like updated successfully!"}, 200
-    abort(401)
-
-
-@app.route("/api/v1/statisics/comments/<blog_id>", methods=["GET"])
-@limiter.limit("30/minute")
-def get_blog_comments(blog_id):
-    """
-    This function returns the comments of a blog post.
-    """
-    comments = DATABASE["BLOGS"].find_one({"_id": blog_id})["comments"]
-
-    if comments:
-        return comments, 200
-
-    return [], 200
-
-
-@app.route("/api/v1/statisics/comments/<blog_id>", methods=["POST"])
-@limiter.limit("5/minute")
-def post_blog_comments(blog_id):
-    """
-    This function updates the comments of a blog post.
-    """
-    if not session["logged_in"]:
-        return {
-            "status": "error",
-            "message": "User authentication is required for posting a comment!",
-        }, 401
-    comment = (
-        request.get_json()["comment"]
-        if request.get_json() and "comment" in request.get_json()
-        else None
-    )
-    if comment:
-        DATABASE["BLOGS"].update_one(
-            {"_id": blog_id},
-            {
-                "$push": {
-                    "comments": {
-                        "comment": comment,
-                        "commented_by": session["user_id"],
-                    }
-                }
-            },
-        )
-        DATABASE["BLOGS"].update_one({"_id": blog_id}, {"$inc": {"comments_count": 1}})
-
-        return {"status": "success", "message": "Comment posted successfully!"}, 200
-    abort(400)
 
 
 @app.route("/api/v1/blogs/<last_blog_id>", methods=["GET"])
@@ -504,34 +447,76 @@ def get_blogs(last_blog_id):
         return jsonify(blogs), 200
     abort(404)
 
+
 @app.route("/api/v1/user/comments", methods=["POST"])
-@limiter.limit("1/minute")
 def post_user_comments():
     """
     This function updates the user comments.
     """
     if request.method == "POST" and session["logged_in"]:
-        comment = (
-            request.get_json()["comment"]
-            if request.get_json() and "comment" in request.get_json()
-            else None
-        )
+        data = request.get_json()
+        comment = data["comment"]
+        blog_sulg = data["slug"]
         if comment:
-            DATABASE["USERS"].update_one(
-                {"_id": session["user_id"]},
+            if len(comment) > 1000:
+                return {
+                    "status": "error",
+                    "message": "Comment length cannot exceed 500 characters!",
+                }, 400
+            if profanity_check(comment):
+                DATABASE["USERS"].update_one(
+                    {"_id": session["user_id"]},
+                    {"blocked": True},
+                )
+                return {
+                    "status": "error",
+                    "message": "Our system has detected that you have used profanity in your comment. You have been blocked from posting further comments!",
+                }, 400
+            if not DATABASE["BLOGS"].find_one({"slug": blog_sulg}):
+                return {"status": "error", "message": "Invalid blog ID!"}, 400
+
+            if DATABASE["USERS"].find_one({"_id": session["user_id"]})["blocked"]:
+                return {
+                    "status": "error",
+                    "message": "You have been blocked from posting further comments!",
+                }, 400
+            DATABASE["BLOGS"].update_one(
+                {"slug": blog_sulg},
                 {
-                    "$push": {
-                        "comments": {
-                            "comment": comment,
-                            "commented_by": session["user_id"],
-                        }
-                    }
+                    "$inc": {
+                        "comments_count": 1,
+                    },
                 },
+            )
+
+            DATABASE["COMMENTS"].insert_one(
+                {
+                    "blog_slug": blog_sulg,
+                    "comment": comment,
+                    "commented_by": session["user_id"],
+                    "user_name": session["user_name"],
+                    "user_profile_pic": session["profile_pic"],
+                    "user_role": "admin" if session["admin"] else "user",
+                    "created_at": datetime.datetime.now(),
+                }
             )
             return {"status": "success", "message": "Comment posted successfully!"}, 200
         abort(400)
     abort(401)
 
+
+@app.route("/api/v1/statisics/views/<blog_slug>", methods=["POST"])
+# Rate limit if blog ID is same
+@limiter.limit("10/minute")
+def get_blog_views(blog_slug):
+    """
+    This function returns the number of views of a blog post.
+    """
+    blog = DATABASE["BLOGS"].find_one({"slug": blog_slug})
+    if blog:
+        DATABASE["BLOGS"].update_one({"slug": blog_slug}, {"$inc": {"views": 1}})
+        return str(blog["views"])
+    abort(404)
 
 
 @app.route("/api/v1/user-content/upload", methods=["POST"])
@@ -574,6 +559,17 @@ def upload_user_content():
                 "location": response["access_url"],
             }, 200
     abort(401)
+
+
+# Error Handlers
+
+
+@app.errorhandler(429)
+def ratelimit_handler(e):
+    return {
+        "status": "error",
+        "message": "Too many requests, please try again later!",
+    }, 429
 
 
 if __name__ == "__main__":

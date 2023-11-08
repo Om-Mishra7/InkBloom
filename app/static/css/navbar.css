@@ -85,6 +85,7 @@ nav {
     border: none;
     background-color: transparent;
     vertical-align: middle;
+    margin-bottom: 0 !important;
 }
 
 .left-header .search-bar input:focus {
@@ -225,7 +226,57 @@ hr {
     fill: #d8d4cf;
 }
 
+.error {
+    margin-top: 60px;
+    padding: 10px;
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    position: fixed;
+    top: 0px;
+    height: 50px;
+    display: none;
+}
 
+.error button {
+    padding: none;
+    border: none;
+    background-color: transparent;
+}
+
+#error-message {
+    margin-right: 10px;
+    font-size: 1rem;
+    font-weight: 400;
+    color: #fff;
+}
+
+
+#error-close {
+    position: absolute;
+    right: 20px;
+    cursor: pointer;
+}
+
+#error-close svg {
+    height: 20px;
+    width: 20px;
+    fill: #fff;
+}
+
+.danger {
+    background-color: #bb2124	;
+}
+
+.success {
+    background-color: #22bb33;
+}
+
+.warning {
+    background-color: #f0ad4e;
+}
 
 @media only screen and (max-width: 800px) {
 

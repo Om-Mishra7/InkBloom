@@ -17,7 +17,8 @@ function viewStats() {
       if (response.status === 200) {
         return response.json();
       } else {
-        throw new Error("Error");
+        Promise.reject(response.status);
+        return;
       }
     })
     .catch((error) => {
@@ -33,15 +34,16 @@ let commentForm = document.getElementById("comment-form");
 
 commentForm.addEventListener("submit", (e) => {
   e.preventDefault();
-  let comment = document.getElementById("comment").value;
-  let name = document.getElementById("name").value;
-  let email = document.getElementById("email").value;
-  let blogId = document.getElementById("blog-id").value;
+  let comment = document.getElementById("comment-content").value;
+  let slug = window.location.pathname.replace("/blogs/", "");
+
+  if (!comment) {
+    return;
+  }
+
   let commentData = {
     comment: comment,
-    name: name,
-    email: email,
-    blogId: blogId,
+    slug: slug,
   };
   fetch("/api/v1/user/comments", {
     method: "POST",
@@ -51,20 +53,25 @@ commentForm.addEventListener("submit", (e) => {
     },
   })
     .then((response) => {
-      if (response.status === 200) {
-        return response.json();
-      } else {
-        throw new Error("Error");
-      }
-    })
+      return response.json();
+    }
+    )
     .then((data) => {
-      window.location.reload();
-    })
+      if (data.status === "success") {
+        window.location.reload();
+      }
+      else {
+        createAlert("danger", data.message);
+      }
+    }
+    )
     .catch((error) => {
       console.log(error);
-    });
+    }
+    );
 }
 );
+
 
 hljs.highlightAll(); // Ensure that the code blocks are still syntax highlighted
 

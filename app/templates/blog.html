@@ -39,7 +39,7 @@
       <div class="blog-comments">
         <div class="blog-comments-header">
           <h2>Comments</h2>
-          <p>50 Comments</p>
+          <p>{{ blog.comments_count }} Comments</p>
         </div>
         {% if session['logged_in'] %}
         <div class="blog-comment-form">
@@ -47,34 +47,44 @@
             <textarea
               name="content"
               id="comment-content"
-              placeholder="Write a comment..., and please be polite and respectful to others"
+              placeholder="By posting a comment, you agree to the community guidelines and that your account name and profile photo will be displayed with your comment.              "
             ></textarea>
             <div class="comment-form-footer">
-              <p>By posting a comment, you agree to the community guidelines and that your account name and profile photo will be displayed with your comment.</p>
             <button type="submit">Comment</button>
             </div>
           </form>
         </div>
         {% endif %}
-         <!--<div class="blog-comments-list">
+         <div class="blog-comments-list">
           {% for comment in blog.comments %}
-          <div class="blog-comment">
+          {% if comment.user_role == 'admin' %}
+          <div class="blog-comment moderator-comment" data-id = "{{ comment._id }}" data-user-id = "{{ comment.commented_by }}">
+            {% else %}
+            <div class="blog-comment" data-id = "{{ comment._id }}" data-user-id = "{{ comment.commented_by }}">
+            {% endif %}
+          
             <div class="blog-comment-author">
               <img
-                src="{{ comment.author_profile_pic }}"
-                alt="{{ comment.author_name }}"
+                src="{{ comment.user_profile_pic }}"
+                alt="{{ comment.user_name }}"
               />
               <div class="blog-comment-author-info">
-                <p class="blog-comment-author-name">{{ comment.author_name }}</p>
+                <p class="blog-comment-author-name">{{ comment.user_name }}</p>
                 <p class="blog-comment-date">
                   {{(comment.created_at | string) | format_timestamp}}
                 </p>
               </div>
             </div>
-            <p class="blog-comment-content">{{ comment.content }}</p>
+            <p class="blog-comment-content">{{ comment.comment | capitalize }}</p>
+            {% if session['admin'] %}
+            <div class="blog-comment-actions">
+              <button class="delete-comment">Delete</button>
+              <button class="block-user">Block User</button>
+            </div>
+            {% endif %}
           </div>
           {% endfor %}
-        </div> -->
+        </div>
     </main>
     {% include 'partials/footer.html' %}
   </body>
