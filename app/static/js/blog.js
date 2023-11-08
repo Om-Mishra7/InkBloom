@@ -29,6 +29,43 @@ function viewStats() {
     });
 }
 
+let commentForm = document.getElementById("comment-form");
+
+commentForm.addEventListener("submit", (e) => {
+  e.preventDefault();
+  let comment = document.getElementById("comment").value;
+  let name = document.getElementById("name").value;
+  let email = document.getElementById("email").value;
+  let blogId = document.getElementById("blog-id").value;
+  let commentData = {
+    comment: comment,
+    name: name,
+    email: email,
+    blogId: blogId,
+  };
+  fetch("/api/v1/user/comments", {
+    method: "POST",
+    body: JSON.stringify(commentData),
+    headers: {
+      "Content-Type": "application/json",
+    },
+  })
+    .then((response) => {
+      if (response.status === 200) {
+        return response.json();
+      } else {
+        throw new Error("Error");
+      }
+    })
+    .then((data) => {
+      window.location.reload();
+    })
+    .catch((error) => {
+      console.log(error);
+    });
+}
+);
+
 hljs.highlightAll(); // Ensure that the code blocks are still syntax highlighted
 
 viewStats();

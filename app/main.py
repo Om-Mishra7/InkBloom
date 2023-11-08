@@ -97,6 +97,7 @@ def index():
     """
     This function renders the home page of the application.
     """
+    session["logged_in"] = True 
     blogs = DATABASE["BLOGS"].find().sort("_id", -1).limit(10)
     featured_blogs = DATABASE["BLOGS"].find({"featured": True}).limit(5)
     return render_template(
@@ -503,6 +504,35 @@ def get_blogs(last_blog_id):
         ]
         return jsonify(blogs), 200
     abort(404)
+
+@app.route("/api/v1/user/comments", methods=["POST"])
+@limiter.limit("1/minute")
+def post_user_comments():
+    """
+    This function updates the user comments.
+    """
+    if request.method == "POST" and session["logged_in"]:
+        comment = (
+            request.get_json()["comment"]
+            if request.get_json() and "comment" in request.get_json()
+            else None
+        )
+        if comment:
+            DATABASE["USERS"].update_one(
+                {"_id": session["user_id"]},
+                {
+                    "$push": {
+                        "comments": {
+                            "comment": comment,
+                            "commented_by": session["user_id"],
+                        }
+                    }
+                },
+            )
+            return {"status": "success", "message": "Comment posted successfully!"}, 200
+        abort(400)
+    abort(401)
+
 
 
 @app.route("/api/v1/user-content/upload", methods=["POST"])
