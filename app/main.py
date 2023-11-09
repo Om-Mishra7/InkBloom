@@ -399,7 +399,7 @@ def rss():
     """
     blogs = DATABASE["BLOGS"].find().sort("_id", -1)
     # Date in RFC-822 date-time format
-    return render_template("web-feed/rss.xml", blogs=blog, date=str(datetime.datetime.now().strftime("%a, %d %b %Y %H:%M:%S %z"))), 200, {'Content-Type': 'application/xml'}
+    return render_template("web-feed/rss.xml", blogs=blogs, date=str(datetime.datetime.now().strftime("%a, %d %b %Y %H:%M:%S %z"))), 200, {'Content-Type': 'application/xml'}
 
 @app.route("/sitemap")
 def sitemap():
