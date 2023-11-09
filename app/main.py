@@ -12,7 +12,7 @@ This file contains the server side code for the web application InkBloom, a powe
 
 import os
 import secrets
-import datetime
+from datetime import datetime, timezone
 import json
 import requests
 from dotenv import load_dotenv
@@ -83,7 +83,7 @@ limiter = Limiter(
 
 @app.template_filter("format_timestamp")
 def format_timestamp(s):
-    return datetime.datetime.strptime(s, "%Y-%m-%d %H:%M:%S.%f").strftime("%d %B %Y")
+    return datetime.strptime(s, "%Y-%m-%d %H:%M:%S.%f").strftime("%d %B %Y")
 
 
 @app.context_processor
@@ -179,7 +179,7 @@ def create_blog():
 
         if category == "dev-log":
             blog_content = (
-                f"<h1> {datetime.datetime.now().strftime('%d %B %Y')} </h1> <br>"
+                f"<h1> {datetime.now().strftime('%d %B %Y')} </h1> <br>"
                 + blog_content
             )
 
@@ -231,8 +231,8 @@ def create_blog():
             "read_time": len(blog_content.split(" ")) // 300,
             "views": 0,
             "comments_count": 0,
-            "created_at": datetime.datetime.now(),
-            "last_updated_at": datetime.datetime.now(),
+            "created_at": datetime.now(),
+            "last_updated_at": datetime.now(),
         }
         DATABASE["BLOGS"].insert_one(blog)
         DATABASE["COMMENTS"].insert_one(
@@ -243,7 +243,7 @@ def create_blog():
                 "user_name": "Moderation Bot",
                 "user_profile_pic": "https://cdn.projectrexa.dedyn.io/favicon.ico",
                 "user_role": "admin",
-                "created_at": datetime.datetime.now(),
+                "created_at": datetime.now(),
             }
         )
         return {
@@ -355,7 +355,7 @@ def github_callback():
                     "profile_pic": user_data["avatar_url"],
                     "admin": False,
                     "blocked": False,
-                    "created_at": datetime.datetime.now(),
+                    "created_at": datetime.now(),
                 }
             )
 
@@ -398,8 +398,8 @@ def rss():
     This function renders the RSS feed of the application.
     """
     blogs = DATABASE["BLOGS"].find().sort("_id", -1)
-    # Date in RFC-822 date-time format
-    return render_template("web-feed/rss.xml", blogs=blogs, date=str(datetime.datetime.now().strftime("%a, %d %b %Y %H:%M:%S %z"))), 200, {'Content-Type': 'application/xml'}
+    date = datetime.now(timezone.utc).strftime("%a, %d %b %Y %H:%M:%S")
+    return render_template("web-feed/rss.xml", blogs=blogs, date=date), 200, {'Content-Type': 'application/xml'}
 
 @app.route("/sitemap")
 def sitemap():
@@ -408,7 +408,8 @@ def sitemap():
     """
     #YYYY-MM-DDThh:mm:ssTZD
     blogs = DATABASE["BLOGS"].find().sort("_id", -1)
-    return render_template("web-feed/sitemap.xml", blogs=blogs, date=str(datetime.datetime.now().strftime("%Y-%m-%dT%H:%M:%S%z"))), 200, {'Content-Type': 'application/xml'}
+    date = datetime.now(timezone.utc).strftime('%a, %d %b %Y %H:%M:%S %z')
+    return render_template("web-feed/sitemap.xml", blogs=blogs, date=date), 200, {'Content-Type': 'application/xml'}
 # Application API Routes
 
 
@@ -527,7 +528,7 @@ def post_user_comments():
                     "user_name": session["user_name"],
                     "user_profile_pic": session["profile_pic"],
                     "user_role": "admin" if session["admin"] else "user",
-                    "created_at": datetime.datetime.now(),
+                    "created_at": datetime.now(),
                 }
             )
             return {"status": "success", "message": "Comment posted successfully!"}, 200
