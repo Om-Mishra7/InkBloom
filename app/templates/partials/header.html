@@ -1,35 +1,37 @@
 <meta charset="UTF-8" />
 <!-- Primary Meta Tags -->
-<meta name="title" content="InkBloom | ProjectRexa Blog" />
+<meta name="title" content="{{ title if title else 'InkBloom|ProjectRexa Blog'}}" />
 <meta
   name="description"
-  content="Welcome to InkBloom|ProjectRexa, my personal tech playground!"
-/>
+  <meta
+    property="og:description"
+    content="{{ description if description else 'Welcome to InkBloom, my personal tech playground!' }}"
+  />
 
 <!-- Open Graph / Facebook -->
 <meta property="og:type" content="website" />
-<meta property="og:url" content="https://blog.projectrexa.dedyn.io" />
-<meta property="og:title" content="InkBloom | ProjectRexa Blog" />
+<meta property="og:url" content="https://blog.projectrexa.dedyn.io{{ url_for(request.endpoint, **request.view_args) }}" />
+<meta property="og:title" content="{{ title if title else 'InkBloom|ProjectRexa Blog'}}" />
 <meta
   property="og:description"
-  content="Welcome to InkBloom, my personal tech playground!"
+  content="{{ description if description else 'Welcome to InkBloom, my personal tech playground!' }}"
 />
 <meta
   property="og:image"
-  content="https://cdn.projectrexa.dedyn.io/projectrexa/assets/meta-logo.png"
+  content="{{ image if image else 'https://cdn.projectrexa.dedyn.io/projectrexa/assets/meta-logo.png' }}"
 />
 
 <!-- X -->
 <meta property="twitter:card" content="summary_large_image" />
-<meta property="twitter:url" content="https://blog.projectrexa.dedyn.io" />
-<meta property="twitter:title" content="InkBloom | ProjectRexa Blog" />
+<meta property="twitter:url" content="https://blog.projectrexa.dedyn.io{{ url_for(request.endpoint, **request.view_args) }}" />
+<meta property="twitter:title" content="{{ title if title else 'InkBloom|ProjectRexa Blog'}}" />
 <meta
   property="twitter:description"
-  content="Welcome to InkBloom, my personal tech playground!"
+  content= "{{ description if description else 'Welcome to InkBloom, my personal tech playground!' }}"
 />
 <meta
   property="twitter:image"
-  content="https://cdn.projectrexa.dedyn.io/projectrexa/assets/meta-logo.png"
+  content="{{ image if image else 'https://cdn.projectrexa.dedyn.io/projectrexa/assets/meta-logo.png' }}"
 />
 
 <!-- Other Meta Tags -->

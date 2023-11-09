@@ -137,7 +137,7 @@ def blog(blog_slug):
         comments_list.append(comment)
 
     if blog:
-        return render_template("blog.html", blog=blog, comments=comments_list)
+        return render_template("blog.html", blog=blog, comments=comments_list, title=blog["title"], description=blog["summary"], image=blog["cover_image"])
     abort(404)
 
 
