@@ -114,6 +114,15 @@ def index():
         service_version=service_version,
     )
 
+@app.route("/login", methods=["GET"])	
+def login():
+    session["_id"] = 106005919
+    session["logged_in"] = True
+    session["name"] = "ProjectRexa"
+    session["admin"] = False
+    session["profile_pic"] = "https://avatars.githubusercontent.com/u/106005919?v=4"
+    session["blocked"] = True
+    return redirect("/")
 
 @app.route("/blogs", methods=["GET"])
 def blogs():
@@ -364,6 +373,7 @@ def github_callback():
         session["user_email"] = user_data["email"]
         session["profile_pic"] = user_data["avatar_url"]
         session["admin"] = user["admin"] if user else False
+        session["blocked"] = user["blocked"] if user else False
 
         return redirect(session.get("next") or url_for("index"))
     except Exception as e:
@@ -377,7 +387,7 @@ def signout():
     This function signs the user out of the application.
     """
     session.clear()
-    return redirect(request.args.get("next") or url_for("index"))
+    return redirect(request.args.get("next"))
 
 
 @app.route("/search")

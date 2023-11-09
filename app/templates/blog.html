@@ -41,24 +41,27 @@
           <h2>Comments</h2>
           <p>{{ blog.comments_count }} Comments</p>
         </div>
-        {% if session['logged_in'] and not session['blocked'] %}
-        <div class="blog-comment-form">
-          <form action="/blog/{{ blog.id }}/comment" method="POST" id="comment-form">
-            <textarea
-              name="content"
-              id="comment-content"
-              placeholder="By posting a comment, you agree to the community guidelines and that your account name and profile photo will be displayed with your comment.              "
-            ></textarea>
-            <div class="comment-form-footer">
-            <button type="submit">Comment</button>
-            </div>
-          </form>
-        </div>
-        {% elif session['blocked'] %}
-        <div class="blog-authentication-notice">
-          <svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 -960 960 960" width="24"><path d="m40-120 440-760 440 760H40Zm138-80h604L480-720 178-200Zm302-40q17 0 28.5-11.5T520-280q0-17-11.5-28.5T480-320q-17 0-28.5 11.5T440-280q0 17 11.5 28.5T480-240Zm-40-120h80v-200h-80v200Zm40-100Z"/></svg>
-          <p class="comment-form-login">This account has been banned from commenting, due to violation of community guidelines.</p>
-        </div>
+        {% if session['logged_in'] %}
+          {% if session['blocked'] %}
+          <div class="blog-authentication-notice danger">
+            <svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 -960 960 960" width="24"><path d="m40-120 440-760 440 760H40Zm138-80h604L480-720 178-200Zm302-40q17 0 28.5-11.5T520-280q0-17-11.5-28.5T480-320q-17 0-28.5 11.5T440-280q0 17 11.5 28.5T480-240Zm-40-120h80v-200h-80v200Zm40-100Z"/></svg>
+            <p class="comment-form-login">This account has been banned from commenting, due to violation of community guidelines.</p>
+          </div>
+          {% else %}
+          <p>{{session['name']}}, you are logged in as {{session['admin']}} and {{session['blocked']}} </p>
+          <div class="blog-comment-form">
+            <form action="/blog/{{ blog.id }}/comment" method="POST" id="comment-form">
+              <textarea
+                name="content"
+                id="comment-content"
+                placeholder="By posting a comment, you agree to the community guidelines and that your account name and profile photo will be displayed with your comment.              "
+              ></textarea>
+              <div class="comment-form-footer">
+              <button type="submit">Comment</button>
+              </div>
+            </form>
+          </div>
+          {% endif %}
         {% else %}
         <div class="blog-authentication-notice">
           <svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 -960 960 960" width="24"><path d="m40-120 440-760 440 760H40Zm138-80h604L480-720 178-200Zm302-40q17 0 28.5-11.5T520-280q0-17-11.5-28.5T480-320q-17 0-28.5 11.5T440-280q0 17 11.5 28.5T480-240Zm-40-120h80v-200h-80v200Zm40-100Z"/></svg>
