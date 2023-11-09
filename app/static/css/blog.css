@@ -103,7 +103,7 @@ main {
   height: 100%;
   object-fit: cover;
   border-radius: 5px;
-  padding: 0 10px;
+  margin: 0 10px;
 }
 
 pre {
