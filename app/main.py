@@ -288,8 +288,12 @@ def authentication():
     """
     if session.get("logged_in"):
         return redirect(url_for("index"))
+    if request.args.get("error"):
+        return {"status": "error", "message": request.args.get("error")}
+    if request.args.get("next"):
+        session["next"] = request.args.get("next")
     return redirect(
-        f"https://github.com/login/oauth/authorize?client_id=d47204e1b7b5ecd7a543&redirect_uri=https://blog.projectrexa.dedyn.io/user/github/callback&scope=user:email&next={request.args.get('next') or url_for('index')}"
+        "https://github.com/login/oauth/authorize?client_id=d47204e1b7b5ecd7a543&redirect_uri=https://blog.projectrexa.dedyn.io/user/github/callback&scope=user:email"
     )
 
 
@@ -361,7 +365,7 @@ def github_callback():
         session["profile_pic"] = user_data["avatar_url"]
         session["admin"] = user["admin"] if user else False
 
-        return redirect(request.args.get("next") or url_for("index"))
+        return redirect(session.get("next") or url_for("index"))
     except Exception as e:
         print(e)
         return redirect("/user/authorize" + "?error=Something went wrong!")
