@@ -406,9 +406,9 @@ def sitemap():
     """
     This function renders the sitemap of the application.
     """
-    #2023-11-09 15:44:30.727000
+    #YYYY-MM-DDThh:mm:ssTZD
     blogs = DATABASE["BLOGS"].find().sort("_id", -1)
-    return render_template("web-feed/sitemap.xml", blogs=blogs, date=str(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f"))), 200, {'Content-Type': 'application/xml'}
+    return render_template("web-feed/sitemap.xml", blogs=blogs, date=str(datetime.datetime.now().strftime("%Y-%m-%dT%H:%M:%S%z"))), 200, {'Content-Type': 'application/xml'}
 # Application API Routes
 
 
