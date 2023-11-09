@@ -13,8 +13,9 @@ body {
 }
 
 a {
-    text-decoration: none;
-    color: #0100d8;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    color: #fff;
 }
 
 a:hover {

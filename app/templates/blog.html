@@ -54,35 +54,40 @@
             </div>
           </form>
         </div>
+        {% else %}
+        <div class="blog-authentication-notice">
+          <svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 -960 960 960" width="24"><path d="m40-120 440-760 440 760H40Zm138-80h604L480-720 178-200Zm302-40q17 0 28.5-11.5T520-280q0-17-11.5-28.5T480-320q-17 0-28.5 11.5T440-280q0 17 11.5 28.5T480-240Zm-40-120h80v-200h-80v200Zm40-100Z"/></svg>
+          <p class="comment-form-login">You need to be <a href="/user/authorize">authenticated</a> in order to comment.</p>
+        </div>
         {% endif %}
          <div class="blog-comments-list">
-          {% for comment in blog.comments %}
-          {% if comment.user_role == 'admin' %}
-          <div class="blog-comment moderator-comment" data-id = "{{ comment._id }}" data-user-id = "{{ comment.commented_by }}">
-            {% else %}
-            <div class="blog-comment" data-id = "{{ comment._id }}" data-user-id = "{{ comment.commented_by }}">
-            {% endif %}
-          
-            <div class="blog-comment-author">
-              <img
-                src="{{ comment.user_profile_pic }}"
-                alt="{{ comment.user_name }}"
-              />
-              <div class="blog-comment-author-info">
-                <p class="blog-comment-author-name">{{ comment.user_name }}</p>
-                <p class="blog-comment-date">
-                  {{(comment.created_at | string) | format_timestamp}}
-                </p>
+          {% for comment in comments %}
+            {% if comment.user_role == 'admin' %}
+            <div class="blog-comment moderator-comment" data-id = "{{ comment._id }}" data-user-id = "{{ comment.commented_by }}">
+              {% else %}
+              <div class="blog-comment" data-id = "{{ comment._id }}" data-user-id = "{{ comment.commented_by }}">
+              {% endif %}
+            
+              <div class="blog-comment-author">
+                <img
+                  src="{{ comment.user_profile_pic }}"
+                  alt="{{ comment.user_name }}"
+                />
+                <div class="blog-comment-author-info">
+                  <p class="blog-comment-author-name">{{ comment.user_name }}</p>
+                  <p class="blog-comment-date">
+                    {{(comment.created_at | string) | format_timestamp}}
+                  </p>
+                </div>
               </div>
+              <p class="blog-comment-content">{{ comment.comment | capitalize }}</p>
+              {% if session['admin'] %}
+              <div class="blog-comment-actions">
+                <button class="delete-comment">Delete</button>
+                <button class="block-user">Block User</button>
+              </div>
+              {% endif %}
             </div>
-            <p class="blog-comment-content">{{ comment.comment | capitalize }}</p>
-            {% if session['admin'] %}
-            <div class="blog-comment-actions">
-              <button class="delete-comment">Delete</button>
-              <button class="block-user">Block User</button>
-            </div>
-            {% endif %}
-          </div>
           {% endfor %}
         </div>
     </main>

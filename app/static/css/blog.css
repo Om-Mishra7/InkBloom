@@ -270,6 +270,31 @@ input[type="text"], textarea {
 
 }
 
+.blog-authentication-notice {
+    width: 100%;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    padding: 10px 10px 10px 10px;
+    background-color: #f0ad4e;
+    border-radius: 5px;
+    height: 40px;
+    font-size: .8rem;
+    color: #000;
+}
+
+.blog-authentication-notice svg {
+    height: 15px;
+    width: 15px;
+    margin-right: 5px;
+    fill: #000;
+}
+
+.blog-authentication-notice a {
+    color: #000;
+}
+
 .delete-comment {
     font-size: .8rem;
     cursor: pointer;

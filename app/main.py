@@ -131,8 +131,12 @@ def blog(blog_slug):
     """
     blog = DATABASE["BLOGS"].find_one({"slug": blog_slug})
     comments = DATABASE["COMMENTS"].find({"blog_slug": blog_slug})
+    comments_list = []
+    for comment in comments:
+        comments_list.append(comment)
+
     if blog:
-        return render_template("blog.html", blog=blog, comments=comments)
+        return render_template("blog.html", blog=blog, comments=comments_list)
     abort(404)
 
 
@@ -488,6 +492,7 @@ def post_user_comments():
                     },
                 },
             )
+            print(blog_sulg, comment)
 
             DATABASE["COMMENTS"].insert_one(
                 {
