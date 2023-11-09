@@ -232,6 +232,7 @@ def create_blog():
             "views": 0,
             "comments_count": 0,
             "created_at": datetime.datetime.now(),
+            "last_updated_at": datetime.datetime.now(),
         }
         DATABASE["BLOGS"].insert_one(blog)
         DATABASE["COMMENTS"].insert_one(
@@ -397,9 +398,17 @@ def rss():
     This function renders the RSS feed of the application.
     """
     blogs = DATABASE["BLOGS"].find().sort("_id", -1)
-    return render_template("rss/rss.xml", blogs=blogs, service_version=service_version, date=datetime.datetime.now().strftime("%a, %d %b %Y %H:%M:%S %z")), 200, {'Content-Type': 'application/xml'}
+    # Date in RFC-822 date-time format
+    return render_template("web-feed/rss.xml", blogs=blog, date=str(datetime.datetime.now().strftime("%a, %d %b %Y %H:%M:%S %z"))), 200, {'Content-Type': 'application/xml'}
 
-
+@app.route("/sitemap")
+def sitemap():
+    """
+    This function renders the sitemap of the application.
+    """
+    #2023-11-09 15:44:30.727000
+    blogs = DATABASE["BLOGS"].find().sort("_id", -1)
+    return render_template("web-feed/sitemap.xml", blogs=blogs, date=str(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f"))), 200, {'Content-Type': 'application/xml'}
 # Application API Routes
 
 
@@ -594,4 +603,4 @@ def ratelimit_handler(e):
 
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(debug=True, port=5001)
