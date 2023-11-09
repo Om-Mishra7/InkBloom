@@ -236,7 +236,7 @@ hr {
     width: 100%;
     position: fixed;
     top: 0px;
-    height: 50px;
+    min-height: 50px;
     display: none;
 }
 
@@ -248,7 +248,7 @@ hr {
 
 #error-message {
     margin-right: 10px;
-    font-size: 1rem;
+    font-size: .8rem;
     font-weight: 400;
     color: #fff;
 }

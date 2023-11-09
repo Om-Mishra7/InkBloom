@@ -114,15 +114,6 @@ def index():
         service_version=service_version,
     )
 
-@app.route("/login", methods=["GET"])	
-def login():
-    session["_id"] = 106005919
-    session["logged_in"] = True
-    session["name"] = "ProjectRexa"
-    session["admin"] = False
-    session["profile_pic"] = "https://avatars.githubusercontent.com/u/106005919?v=4"
-    session["blocked"] = True
-    return redirect("/")
 
 @app.route("/blogs", methods=["GET"])
 def blogs():
@@ -356,7 +347,7 @@ def github_callback():
             DATABASE["USERS"].insert_one(
                 {
                     "_id": user_data["id"],
-                    "name": user_data["name"],
+                    "name": user_data["name"] if user_data["name"] else "User",
                     "email": user_data["email"],
                     "profile_pic": user_data["avatar_url"],
                     "admin": False,
@@ -485,6 +476,7 @@ def post_user_comments():
                 DATABASE["USERS"].update_one(
                     {"_id": session["user_id"]}, {"$set": {"blocked": True}}
                 )
+                session.clear()
                 return {
                     "status": "error",
                     "message": "Our system has detected that you have used profanity in your comment. You have been blocked from posting further comments!",
