@@ -1,0 +1,30 @@
+<rss xmlns:atom="http://www.w3.org/2005/Atom" version="2.0">
+    <channel>
+        <title>InkBloom|ProjectRexa</title>
+        <link>https://blog.projectrexa.dedyn.io/</link>
+        <description>The RSS feed containing the latest posts from the InkBloom|ProjectRexa blog.</description>
+        <language>en</language>
+        <lastBuildDate>{{ date }} </lastBuildDate>
+        <pubDate>{{ date }}</pubDate>
+        <ttl>60</ttl>
+        <webMaster>admin@projectrexa.dedyn.io</webMaster>
+        <copywrite>© 2021 InkBloom|ProjectRexa</copywrite>
+        <generator>ProjectRexa RSS Generator v{{service_version}}</generator>
+        <image>
+            <url>https://cdn.projectrexa.dedyn.io/projectrexa/assets/logo_no_background.png</url>
+            <title>InkBloom|ProjectRexa Logo</title>
+            <link>https://blog.projectrexa.dedyn.io/</link>
+        </image>
+        <atom:link href="https://blog.projectrexa.dedyn.io/rss.xml" rel="self" type="application/rss+xml"/>
+        {% for blog in blogs %}
+        <item>
+            <title>{{ blog.title }}</title>
+            <link>https://blog.projectrexa.dedyn.io/blogs/{{ blog.slug }}</link>
+            <description>{{ blog.summary }}</description>
+            <pubDate>{{ blog.date }}</pubDate>
+            <guid>{{ blog._id }}</guid>
+            <source url="https://blog.projectrexa.dedyn.io/rss">InkBloom|ProjectRexa</source>
+        </item>
+        {% endfor %}
+    </channel>
+</rss>

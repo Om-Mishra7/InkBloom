@@ -28,6 +28,7 @@ from flask import (
     session,
     abort,
     jsonify,
+    make_response
 )
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
@@ -138,6 +139,7 @@ def blog(blog_slug):
     if blog:
         return render_template("blog.html", blog=blog, comments=comments_list)
     abort(404)
+
 
 
 @app.route("/admin/blogs/create", methods=["GET", "POST"])
@@ -387,6 +389,15 @@ def search_page():
     This function renders the search page of the application.
     """
     return render_template("search.html")
+
+
+@app.route("/rss")
+def rss():
+    """
+    This function renders the RSS feed of the application.
+    """
+    blogs = DATABASE["BLOGS"].find().sort("_id", -1)
+    return render_template("rss/rss.xml", blogs=blogs, service_version=service_version, date=datetime.datetime.now().strftime("%a, %d %b %Y %H:%M:%S %z")), 200, {'Content-Type': 'application/xml'}
 
 
 # Application API Routes
