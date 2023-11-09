@@ -289,7 +289,7 @@ def authentication():
     if session.get("logged_in"):
         return redirect(url_for("index"))
     return redirect(
-        "https://github.com/login/oauth/authorize?client_id=d47204e1b7b5ecd7a543&redirect_uri=https://blog.projectrexa.dedyn.io/user/github/callback&scope=user:email"
+        f"https://github.com/login/oauth/authorize?client_id=d47204e1b7b5ecd7a543&redirect_uri=https://blog.projectrexa.dedyn.io/user/github/callback&scope=user:email&next={request.args.get('next') or url_for('index')}"
     )
 
 
