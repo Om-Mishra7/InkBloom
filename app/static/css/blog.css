@@ -254,7 +254,7 @@ input[type="text"], textarea {
 
 .blog-comment-content {
     text-align: justify;
-    padding: 0 20px 10px 20px;
+    padding: 10px 20px 10px 20px;
     font-size: .8rem;
     color: #fff;
 }
