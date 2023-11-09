@@ -361,7 +361,7 @@ def github_callback():
         session["profile_pic"] = user_data["avatar_url"]
         session["admin"] = user["admin"] if user else False
 
-        return redirect(url_for("index"))
+        return redirect(request.args.get("next") or url_for("index"))
     except Exception as e:
         print(e)
         return redirect("/user/authorize" + "?error=Something went wrong!")
@@ -373,7 +373,7 @@ def signout():
     This function signs the user out of the application.
     """
     session.clear()
-    return redirect(url_for("index"))
+    return redirect(request.args.get("next") or url_for("index"))
 
 
 @app.route("/search")
@@ -469,8 +469,7 @@ def post_user_comments():
                 }, 400
             if profanity_check(comment):
                 DATABASE["USERS"].update_one(
-                    {"_id": session["user_id"]},
-                    {"blocked": True},
+                    {"_id": session["user_id"]}, {"$set": {"blocked": True}}
                 )
                 return {
                     "status": "error",
