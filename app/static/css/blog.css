@@ -225,6 +225,7 @@ textarea {
   width: 20px;
   height: 20px;
   border-radius: 50%;
+  padding-top: 5px;
 }
 
 .blog-comment-author-info {
@@ -260,7 +261,7 @@ textarea {
 }
 
 .blog-comment-content {
-  text-align: justify;
+  text-align: left;
   padding: 10px 10px 20px 10px;
   font-size: 0.9rem;
   color: #fff;

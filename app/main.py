@@ -247,7 +247,7 @@ def create_blog():
                 "comment": "Please do not harass or abuse anyone in the comments section. We have a zero tolerance policy for harassment and abuse. If you are found to be violating our policy, you will be blocked from posting further comments.",
                 "commented_by": "Moderation Bot",
                 "user_name": "Moderation Bot",
-                "user_profile_pic": "https://projectrexa.dedyn.io/assets/images/logo.png",
+                "user_profile_pic": "https://cdn.projectrexa.dedyn.io/favicon.ico",
                 "user_role": "admin",
                 "created_at": datetime.datetime.now(),
             }
