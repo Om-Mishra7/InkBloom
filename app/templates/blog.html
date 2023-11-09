@@ -48,7 +48,6 @@
             <p class="comment-form-login">This account has been banned from commenting, due to violation of community guidelines.</p>
           </div>
           {% else %}
-          <p>{{session['name']}}, you are logged in as {{session['admin']}} and {{session['blocked']}} </p>
           <div class="blog-comment-form">
             <form action="/blog/{{ blog.id }}/comment" method="POST" id="comment-form">
               <textarea
