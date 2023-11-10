@@ -486,6 +486,8 @@ def get_blogs(last_blog_id):
             }
             for blog in blogs
         ]
+        if len(blogs) < 1:
+            return jsonify([]), 404
         return jsonify(blogs), 200
     abort(404)
 
