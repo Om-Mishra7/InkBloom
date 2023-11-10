@@ -118,7 +118,7 @@ def index():
     This function renders the home page of the application.
     """
     blogs = DATABASE["BLOGS"].find().sort("_id", -1).limit(10)
-    featured_blogs = DATABASE["BLOGS"].find({"featured": True}).limit(5)
+    featured_blogs = DATABASE["BLOGS"].find({"featured": True}).limit(3)
     return render_template(
         "index.html",
         blogs=blogs,
