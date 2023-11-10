@@ -258,7 +258,7 @@ textarea {
   content: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' height='15' viewBox='0 -960 960 960' width='15'%3E%3Cpath d='m344-60-76-128-144-32 14-148-98-112 98-112-14-148 144-32 76-128 136 58 136-58 76 128 144 32-14 148 98 112-98 112 14 148-144 32-76 128-136-58-136 58Zm94-278 226-226-56-58-170 170-86-84-56 56 142 142Z' fill='%23ffffff'/%3E%3C/svg%3E");
   font-size: 0.9rem;
   vertical-align: middle;
-  padding-top: 5px;
+  padding-top: 3px;
 }
 
 .blog-comment-date {

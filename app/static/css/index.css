@@ -109,7 +109,8 @@ main .main-section {
     flex-direction: row;
     align-items: center;
     justify-content: flex-start;
-    gap: 20px;
+    flex-wrap: wrap;
+    gap: 10px;
     width: 100%;
 }
 
@@ -118,6 +119,7 @@ main .main-section {
     flex-direction: row;
     align-items: center;
     justify-content: flex-start;
+    flex-wrap: wrap;
     gap: 5px;
 }
 
@@ -153,6 +155,7 @@ main .main-section {
 
 .blog-views p svg,
 .read-time p svg {
+    padding-top: 2px;
     width: 15px;
     height: 15px;
     fill: #d8d4cf;
@@ -292,7 +295,7 @@ main .sidebar-section {
     font-family: monospace;
 }
 
-.page-footer{
+.page-footer {
     display: none !important;
 }
 
@@ -313,14 +316,22 @@ main .sidebar-section {
         display: none;
     }
 
-    .blog-metadata p, .blog-title , .blog-summary, .blog-tags p, .read-time p, .blog-views p {
+    .blog-metadata p,
+    .blog-title,
+    .blog-summary,
+    .blog-tags p,
+    .read-time p,
+    .blog-views p {
         font-size: 0.7rem;
     }
 
-    .page-footer{
+    .page-footer {
         display: flex !important;
     }
-    
-    
+
+    .blog-tags {
+        display: none;
+    }
+
 
 }
