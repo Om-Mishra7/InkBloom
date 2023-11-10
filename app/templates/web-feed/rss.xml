@@ -4,8 +4,8 @@
         <link>https://blog.projectrexa.dedyn.io/</link>
         <description>The RSS feed containing the latest posts from the InkBloom|ProjectRexa blog.</description>
         <language>en</language>
-        <lastBuildDate>{{ date }}UTC</lastBuildDate>
-        <pubDate>{{ date }}UTC</pubDate>
+        <lastBuildDate>{{ date }}</lastBuildDate>
+        <pubDate>{{ date }}</pubDate>
         <ttl>60</ttl>
         <generator>ProjectRexa RSS Generator v{{service_version}}</generator>
         <image>
@@ -19,7 +19,7 @@
             <title>{{ blog.title }}</title>
             <link>https://blog.projectrexa.dedyn.io/blogs/{{ blog.slug }}</link>
             <description>{{ blog.summary }}</description>
-            <pubDate>{{ blog.created_at }} UTC</pubDate>
+            <pubDate>{{ (blog.created_at | string) | rss_timestamp}}</pubDate>
             <guid>https://blog.projectrexa.dedyn.io/blogs/{{ blog.slug }}</guid>
             <source url="https://blog.projectrexa.dedyn.io/rss">InkBloom|ProjectRexa</source>
         </item>

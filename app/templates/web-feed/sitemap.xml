@@ -1,27 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 	<url>
-		<loc>
-			https://blog.projectrexa.dedyn.io/
-		</loc>
-		<lastmod>
-			{{ date }}
-		</lastmod>
-		<priority>
-			1.0
-		</priority>
+		<loc>https://blog.projectrexa.dedyn.io/</loc>
+		<lastmod>{{ date }}</lastmod>
+		<priority>1.0</priority>
 	</url>
 	{% for blog in blogs %}
 	<url>
-		<loc>
-			https://blog.projectrexa.dedyn.io/{{ blog.slug }}
-		</loc>
-		<lastmod>
-			{{ blog.last_updated_at if blog.last_updated_at else blog.created_at }}
-		</lastmod>
-		<priority>
-			0.8
-		</priority>
+		<loc>https://blog.projectrexa.dedyn.io/{{ blog.slug }}</loc>
+		<lastmod>{{ (blog.last_updated_at if blog.last_updated_at else blog.created_at | string) | sitemap_timestamp}}</lastmod>
+		<priority>0.8</priority>
 	</url>
 	{% endfor %}
 </urlset>

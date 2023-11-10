@@ -85,6 +85,15 @@ limiter = Limiter(
 def format_timestamp(s):
     return datetime.strptime(s, "%Y-%m-%d %H:%M:%S.%f").strftime("%d %B %Y")
 
+@app.template_filter("rss_timestamp")
+def rss_timestamp(s):
+    # Format: Sat, 07 Sep 2002 00:00:01 GMT
+    return datetime.strptime(s, '%Y-%m-%d %H:%M:%S.%f').replace(tzinfo=timezone.utc).strftime('%a, %d %b %Y %H:%M:%S %Z')
+
+@app.template_filter("sitemap_timestamp")
+def sitemap_timestamp(s):
+    # Format: 2022-06-04
+    return datetime.strptime(s, '%Y-%m-%d %H:%M:%S.%f').strftime('%Y-%m-%d')
 
 @app.context_processor
 def app_version():
@@ -398,7 +407,8 @@ def rss():
     This function renders the RSS feed of the application.
     """
     blogs = DATABASE["BLOGS"].find().sort("_id", -1)
-    date = datetime.now(timezone.utc).strftime("%a, %d %b %Y %H:%M:%S")
+    date = datetime.now(timezone.utc).strftime('%a, %d %b %Y %H:%M:%S %Z')
+
     return render_template("web-feed/rss.xml", blogs=blogs, date=date), 200, {'Content-Type': 'application/xml'}
 
 @app.route("/sitemap")
@@ -408,7 +418,8 @@ def sitemap():
     """
     #YYYY-MM-DDThh:mm:ssTZD
     blogs = DATABASE["BLOGS"].find().sort("_id", -1)
-    date = datetime.now(timezone.utc).strftime('%a, %d %b %Y %H:%M:%S %z')
+    # 2022-06-04
+    date = datetime.now(timezone.utc).strftime('%Y-%m-%d')
     return render_template("web-feed/sitemap.xml", blogs=blogs, date=date), 200, {'Content-Type': 'application/xml'}
 # Application API Routes
 

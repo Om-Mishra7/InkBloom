@@ -265,6 +265,7 @@ main .sidebar-section {
 
 .footer-message {
     width: 100%;
+    font-family: monospace;
     font-size: 0.8rem;
     font-weight: 400;
     color: #d8d4cf;
