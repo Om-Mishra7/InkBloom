@@ -13,9 +13,8 @@ body {
 }
 
 a {
-    text-decoration: underline;
-    text-underline-offset: 3px;
-    color: #fff;
+    text-decoration: none;
+    color: #5727B3;
 }
 
 a:hover {
@@ -44,6 +43,16 @@ ul {
 ::-webkit-scrollbar {
     width: 2px;
     height: 2px;
+}
+
+::-moz-selection {
+    color: #000;
+    background-color: #5727B3;
+}
+
+::selection {
+    color: #000;
+    background-color: #5727B3;
 }
 
 ::-webkit-scrollbar-track {

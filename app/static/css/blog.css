@@ -84,7 +84,7 @@ main {
   justify-content: flex-start;
   gap: 1em;
   width: 100%;
-  text-align: justify;
+  text-align: left;
   padding: 0 10px;
 }
 
