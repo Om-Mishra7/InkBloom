@@ -22,6 +22,7 @@ from bson import ObjectId
 from flask import (
     Flask,
     render_template,
+    send_from_directory,
     url_for,
     flash,
     redirect,
@@ -422,6 +423,22 @@ def sitemap():
     # 2022-06-04
     date = datetime.now(timezone.utc).strftime('%Y-%m-%d')
     return render_template("web-feed/sitemap.xml", blogs=blogs, date=date), 200, {'Content-Type': 'application/xml'}
+
+@app.route("/robots.txt")
+def robots():
+    """
+    This function renders the robots.txt of the application.
+    """
+    print("robots")
+    return send_from_directory("static", "crawlers/robots.txt"), 200, {'Content-Type': 'text/plain'}
+
+@app.route("/ping")
+def ping():
+    """
+    This function renders the ping page of the application.
+    """
+    return "pong", 200, {'Content-Type': 'text/plain'}
+
 # Application API Routes
 
 

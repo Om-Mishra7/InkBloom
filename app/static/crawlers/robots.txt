@@ -1,0 +1,5 @@
+User-agent: *
+Disallow: 
+Disallow: /search/
+Disallow: /user/
+Sitemap: https://blog.projectrexa.dedyn.io/sitemap
