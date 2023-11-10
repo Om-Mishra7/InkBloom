@@ -95,7 +95,7 @@ def rss_timestamp(s):
 @app.template_filter("sitemap_timestamp")
 def sitemap_timestamp(s):
     # Format: 2022-06-04
-    return datetime.strptime(s, '%Y-%m-%d %H:%M:%S.%f').strftime('%Y-%m-%d')
+    return s.strftime('%Y-%m-%d')
 
 @app.context_processor
 def app_version():
