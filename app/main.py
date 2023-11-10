@@ -13,6 +13,7 @@ This file contains the server side code for the web application InkBloom, a powe
 import os
 import secrets
 from datetime import datetime, timezone
+from email import utils
 import json
 import requests
 from dotenv import load_dotenv
@@ -88,7 +89,7 @@ def format_timestamp(s):
 @app.template_filter("rss_timestamp")
 def rss_timestamp(s):
     # Format: Sat, 07 Sep 2002 00:00:01 GMT
-    return datetime.strptime(s, '%Y-%m-%d %H:%M:%S.%f').replace(tzinfo=timezone.utc).strftime('%a, %d %b %Y %H:%M:%S %Z')
+    return utils.format_datetime(datetime.strptime(s, '%Y-%m-%d %H:%M:%S.%f').replace(tzinfo=timezone.utc))
 
 @app.template_filter("sitemap_timestamp")
 def sitemap_timestamp(s):
@@ -407,7 +408,7 @@ def rss():
     This function renders the RSS feed of the application.
     """
     blogs = DATABASE["BLOGS"].find().sort("_id", -1)
-    date = datetime.now(timezone.utc).strftime('%a, %d %b %Y %H:%M:%S %Z')
+    date = utils.format_datetime(datetime.now(timezone.utc))
 
     return render_template("web-feed/rss.xml", blogs=blogs, date=date), 200, {'Content-Type': 'application/xml'}
 
