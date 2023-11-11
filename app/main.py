@@ -445,9 +445,6 @@ def signout():
     This function signs the user out of the application.
     """
     session.clear()
-    if request.args.get("next"):
-        if next.startswith("/"):
-            return redirect(str(request.args.get("next")))
     return redirect(url_for("index"))
 
 
