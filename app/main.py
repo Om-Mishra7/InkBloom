@@ -179,6 +179,12 @@ def blog(blog_slug):
     blog = DATABASE["BLOGS"].find_one({"slug": blog_slug})
     comments = DATABASE["COMMENTS"].find({"blog_slug": blog_slug})
     comments_list = list(comments)
+    if blog:
+        suggested_blogs = (
+            DATABASE["BLOGS"].find({"tags": {"$in": blog.get("tags", [])}}).limit(2)
+        )
+        print(suggested_blogs)
+
 
     if blog:
         return render_template(
