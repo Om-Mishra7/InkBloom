@@ -446,7 +446,7 @@ def signout():
     """
     session.clear()
     if request.args.get("next"):
-        if next.startswith("/") or next.startswith("https://blog.projectrexa.dedyn.io"):
+        if next.startswith("/"):
             return redirect(str(request.args.get("next")))
     return redirect(url_for("index"))
 
