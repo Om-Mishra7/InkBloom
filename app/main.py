@@ -116,7 +116,7 @@ def add_header(response):
     response.headers["X-Content-Type-Options"] = "nosniff"
     response.headers["X-XSS-Protection"] = "1; mode=block"
     response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
-    response.headers["Content-Security-Policy"] = "default-src 'self'"
+    response.headers["Content-Security-Policy"] = "default-src 'self' https://cdn.projectrexa.dedyn.io https://projectrexa.dedyn.io https://fonts.googleapis.com https://fonts.gstatic.com https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://avatars.githubusercontent.com "
     response.headers["Referrer-Policy"] = "no-referrer"
     response.headers["Connection"] = "keep-alive"
     return response
