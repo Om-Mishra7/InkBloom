@@ -90,11 +90,13 @@ Session(app)
 # Rate Limiter Configuration
 
 pool = redis.connection.BlockingConnectionPool.from_url(redis_url)
+if not pool:
+    raise RuntimeError("Could not connect to redis")
 limiter = Limiter(
     app=app,
     key_func=lambda: get_remote_address(),
     storage_uri=redis_url,
-    storage_options={"connection_pool": str(pool)} if pool else None,
+    storage_options={"connection_pool": pool},
     strategy="moving-window",
 )
 
