@@ -140,6 +140,8 @@ def app_version():
 
 @app.after_request
 def add_header(response):
+    if request.remote_addr == "127.0.0.1":
+        return response
     response.headers["Access-Control-Allow-Origin"] = "*"
     response.headers["Cache-Control"] = "private, max-age=300"
     response.headers["X-Frame-Options"] = "SAMEORIGIN"
@@ -148,9 +150,6 @@ def add_header(response):
     response.headers[
         "Strict-Transport-Security"
     ] = "max-age=31536000; includeSubDomains"
-    response.headers[
-        "Content-Security-Policy"
-    ] = "default-src 'self' https://cdn.projectrexa.dedyn.io https://projectrexa.dedyn.io https://fonts.googleapis.com https://fonts.gstatic.com https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://avatars.githubusercontent.com https://cdn.tiny.cloud "
     response.headers["Referrer-Policy"] = "no-referrer"
     response.headers["Connection"] = "keep-alive"
     return response
@@ -185,8 +184,16 @@ def blog(blog_slug):
         suggested_blogs = (
             DATABASE["BLOGS"].find({"tags": {"$in": blog.get("tags", [])}}).limit(2)
         )
-        print(suggested_blogs)
-
+        # suggested_blogs = list(filter(lambda x: x.get("slug") != blog_slug, suggested_blogs))
+        return render_template(
+            "blog.html",
+            blog=blog,
+            comments=comments_list,
+            suggested_blogs=suggested_blogs,
+            title=blog.get("title", ""),
+            description=blog.get("summary", ""),
+            image=blog.get("cover_image", ""),
+        )
 
     if blog:
         return render_template(

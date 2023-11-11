@@ -46,8 +46,10 @@
             <div class="blog-footer">
               <div class="blog-tags">
                 {% for i in range(5) %}
-                {% set tag = blog.tags[i] %}
-                <p>{{tag | upper}}</p>
+                  {% if i < blog.tags|length %}
+                      {% set tag = blog.tags[i] %}
+                      <p>{{ tag | upper }}</p>
+                  {% endif %}
                 {% endfor %}
               </div>
 

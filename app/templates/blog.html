@@ -36,6 +36,25 @@
         </div>
         {{ blog.content | safe }}
       </div>
+      {% if suggested_blogs %}
+      <div class="blog-suggested-blogs">
+        <h2>Suggested Blogs</h2>
+        <div class="blog-suggested-blogs-list">
+          {% for blog in suggested_blogs %}
+          <div class="blog-suggested-blog">
+            <a href="/blogs/{{ blog.slug }}">
+              <div class="blog-suggested-blog-cover-image">
+                <img src="{{ blog.cover_image }}" alt="{{ blog.title }}" />
+              </div>
+              <div class="blog-suggested-blog-details">
+                <p class="blog-suggested-blog-title">{{ blog.title }}</p>
+              </div>
+            </a>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
       <div class="blog-comments">
         <div class="blog-comments-header">
           <h2>Comments</h2>
@@ -95,6 +114,8 @@
             </div>
           {% endfor %}
         </div>
+      </div>
+
     </main>
     {% include 'partials/footer.html' %}
   </body>
