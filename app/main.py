@@ -184,7 +184,7 @@ def blog(blog_slug):
         suggested_blogs = (
             DATABASE["BLOGS"].find({"tags": {"$in": blog.get("tags", [])}}).limit(2)
         )
-        # suggested_blogs = list(filter(lambda x: x.get("slug") != blog_slug, suggested_blogs))
+        suggested_blogs = list(filter(lambda x: x.get("slug") != blog_slug, suggested_blogs))
         return render_template(
             "blog.html",
             blog=blog,
