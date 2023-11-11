@@ -30,7 +30,7 @@ from flask import (
     session,
     abort,
     jsonify,
-    make_response
+    make_response,
 )
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
@@ -87,15 +87,20 @@ limiter = Limiter(
 def format_timestamp(s):
     return datetime.strptime(s, "%Y-%m-%d %H:%M:%S.%f").strftime("%d %B %Y")
 
+
 @app.template_filter("rss_timestamp")
 def rss_timestamp(s):
     # Format: Sat, 07 Sep 2002 00:00:01 GMT
-    return utils.format_datetime(datetime.strptime(s, '%Y-%m-%d %H:%M:%S.%f').replace(tzinfo=timezone.utc))
+    return utils.format_datetime(
+        datetime.strptime(s, "%Y-%m-%d %H:%M:%S.%f").replace(tzinfo=timezone.utc)
+    )
+
 
 @app.template_filter("sitemap_timestamp")
 def sitemap_timestamp(s):
     # Format: 2022-06-04
-    return s.strftime('%Y-%m-%d')
+    return s.strftime("%Y-%m-%d")
+
 
 @app.context_processor
 def app_version():
@@ -148,9 +153,15 @@ def blog(blog_slug):
         comments_list.append(comment)
 
     if blog:
-        return render_template("blog.html", blog=blog, comments=comments_list, title=blog["title"], description=blog["summary"], image=blog["cover_image"])
+        return render_template(
+            "blog.html",
+            blog=blog,
+            comments=comments_list,
+            title=blog["title"],
+            description=blog["summary"],
+            image=blog["cover_image"],
+        )
     abort(404)
-
 
 
 @app.route("/admin/blogs/create", methods=["GET", "POST"])
@@ -190,8 +201,7 @@ def create_blog():
 
         if category == "dev-log":
             blog_content = (
-                f"<h1> {datetime.now().strftime('%d %B %Y')} </h1> <br>"
-                + blog_content
+                f"<h1> {datetime.now().strftime('%d %B %Y')} </h1> <br>" + blog_content
             )
 
         if blog_cover_image.filename == "":
@@ -262,8 +272,13 @@ def create_blog():
             "message": "Blog created successfully!",
             "blog_slug": blog_slug,
         }, 200
-    if session["logged_in"] and session["admin"]:
-        return render_template("create_blog.html")
+    try:
+        if session["logged_in"] and session["admin"]:
+            return render_template("create_blog.html")
+        else:
+            abort(401)
+    except Exception as e:
+        abort(401)
 
 
 @app.route("/admin/blogs/edit/<blog_id>", methods=["GET", "POST"])
@@ -411,18 +426,28 @@ def rss():
     blogs = DATABASE["BLOGS"].find().sort("_id", -1)
     date = utils.format_datetime(datetime.now(timezone.utc))
 
-    return render_template("web-feed/rss.xml", blogs=blogs, date=date), 200, {'Content-Type': 'application/xml'}
+    return (
+        render_template("web-feed/rss.xml", blogs=blogs, date=date),
+        200,
+        {"Content-Type": "application/xml"},
+    )
+
 
 @app.route("/sitemap")
 def sitemap():
     """
     This function renders the sitemap of the application.
     """
-    #YYYY-MM-DDThh:mm:ssTZD
+    # YYYY-MM-DDThh:mm:ssTZD
     blogs = DATABASE["BLOGS"].find().sort("_id", -1)
     # 2022-06-04
-    date = datetime.now(timezone.utc).strftime('%Y-%m-%d')
-    return render_template("web-feed/sitemap.xml", blogs=blogs, date=date), 200, {'Content-Type': 'application/xml'}
+    date = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    return (
+        render_template("web-feed/sitemap.xml", blogs=blogs, date=date),
+        200,
+        {"Content-Type": "application/xml"},
+    )
+
 
 @app.route("/robots.txt")
 def robots():
@@ -430,14 +455,20 @@ def robots():
     This function renders the robots.txt of the application.
     """
     print("robots")
-    return send_from_directory("static", "crawlers/robots.txt"), 200, {'Content-Type': 'text/plain'}
+    return (
+        send_from_directory("static", "crawlers/robots.txt"),
+        200,
+        {"Content-Type": "text/plain"},
+    )
+
 
 @app.route("/ping")
 def ping():
     """
     This function renders the ping page of the application.
     """
-    return "pong", 200, {'Content-Type': 'text/plain'}
+    return "pong", 200, {"Content-Type": "text/plain"}
+
 
 # Application API Routes
 
@@ -632,6 +663,38 @@ def ratelimit_handler(e):
         "status": "error",
         "message": "Too many requests, please try again later!",
     }, 429
+
+
+@app.errorhandler(404)
+def page_not_found(e):
+    return {
+        "status": "error",
+        "message": "Page not found!",
+    }, 404
+
+
+@app.errorhandler(401)
+def unauthorized(e):
+    return {
+        "status": "error",
+        "message": "You are not authorized to access this page!",
+    }, 401
+
+
+@app.errorhandler(400)
+def bad_request(e):
+    return {
+        "status": "error",
+        "message": "Bad request!",
+    }, 400
+
+
+@app.errorhandler(500)
+def internal_server_error(e):
+    return {
+        "status": "error",
+        "message": "Internal server error!",
+    }, 500
 
 
 if __name__ == "__main__":

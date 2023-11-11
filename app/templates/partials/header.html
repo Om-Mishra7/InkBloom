@@ -1,20 +1,20 @@
 <meta charset="UTF-8" />
 <!-- Primary Meta Tags -->
-<meta name="title" content="{{ title if title else 'InkBloom|ProjectRexa Blog'}}" />
+<meta name="title" content="{{ (title + ' - InkBloom|ProjectRexa Blog') if title else 'InkBloom|ProjectRexa Blog'}}" />
 <meta
   name="description"
   <meta
     property="og:description"
-    content="{{ description if description else 'Welcome to InkBloom, my personal tech playground!' }}"
+    content="{{ description if description else 'Welcome to InkBloom, my personal tech blog!' }}"
   />
 
 <!-- Open Graph / Facebook -->
 <meta property="og:type" content="website" />
 <meta property="og:url" content="https://blog.projectrexa.dedyn.io{{ url_for(request.endpoint, **request.view_args) }}" />
-<meta property="og:title" content="{{ title if title else 'InkBloom|ProjectRexa Blog'}}" />
+<meta property="og:title" content="{{ (title + ' - InkBloom|ProjectRexa Blog') if title else 'InkBloom|ProjectRexa Blog'}}" />
 <meta
   property="og:description"
-  content="{{ description if description else 'Welcome to InkBloom, my personal tech playground!' }}"
+  content="{{ description if description else 'Welcome to InkBloom, my personal tech blog!' }}"
 />
 <meta
   property="og:image"
@@ -24,10 +24,10 @@
 <!-- X -->
 <meta property="twitter:card" content="summary_large_image" />
 <meta property="twitter:url" content="https://blog.projectrexa.dedyn.io{{ url_for(request.endpoint, **request.view_args) }}" />
-<meta property="twitter:title" content="{{ title if title else 'InkBloom|ProjectRexa Blog'}}" />
+<meta property="twitter:title" content="{{ (title + ' - InkBloom|ProjectRexa Blog') if title else 'InkBloom|ProjectRexa Blog'}}" />
 <meta
   property="twitter:description"
-  content= "{{ description if description else 'Welcome to InkBloom, my personal tech playground!' }}"
+  content= "{{ description if description else 'Welcome to InkBloom, my personal tech blog!' }}"
 />
 <meta
   property="twitter:image"
@@ -35,7 +35,7 @@
 />
 
 <!-- Other Meta Tags -->
-<meta name="keywords" content="InkBloom, Blog, ProjectRexa" />
+<meta name="keywords" content="InkBloom, Blog, ProjectRexa, Technology" />
 <meta name="author" content="ProjectRexa" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <link
