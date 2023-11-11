@@ -107,6 +107,21 @@ def app_version():
     return dict(service_version=service_version)
 
 
+# Header to keep connection alive
+@app.after_request
+def add_header(response):
+    response.headers["Access-Control-Allow-Origin"] = "*"
+    response.headers["Cache-Control"] = "private, max-age=300"
+    response.headers["X-Frame-Options"] = "SAMEORIGIN"
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-XSS-Protection"] = "1; mode=block"
+    response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+    response.headers["Content-Security-Policy"] = "default-src 'self'"
+    response.headers["Referrer-Policy"] = "no-referrer"
+    response.headers["Connection"] = "keep-alive"
+    return response
+
+
 def profanity_check(comment):
     """
     This function checks for profanity in the comment.
