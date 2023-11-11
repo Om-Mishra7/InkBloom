@@ -11,7 +11,7 @@ This file contains the server side code for the web application InkBloom, a powe
 # Importing the required libraries
 
 import os
-import re
+import cgi
 import secrets
 from datetime import datetime, timezone
 from email import utils
@@ -31,7 +31,6 @@ from flask import (
     session,
     abort,
     jsonify,
-    make_response,
 )
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
@@ -232,10 +231,10 @@ def create_blog():
                 blog_tags = [tag for tag in blog_tags if tag != "featured"]
             else:
                 abort(401)
-        except Exception as e:
+        except Exception:
             return {
                 "status": "error",
-                "message": f"Please fill all the fields correctly - {str(e)}",
+                "message": "Please fill all the fields correctly",
             }, 400
 
         while DATABASE["BLOGS"].find_one({"slug": blog_slug}):
@@ -327,7 +326,7 @@ def create_blog():
         return {
             "status": "success",
             "message": "Blog created successfully!",
-            "blog_slug": blog_slug,
+            "blog_slug": cgi.escape(blog_slug),
         }, 200
 
     elif session.get("logged_in") and session.get("admin"):
@@ -350,7 +349,7 @@ def authentication():
 
     error_message = request.args.get("error")
     if error_message:
-        return {"status": "error", "message": error_message}
+        return {"status": "error", "message": cgi.escape(error_message)}, 400
 
     next_url = request.args.get("next")
     if next_url:
@@ -447,7 +446,8 @@ def signout():
     """
     session.clear()
     if request.args.get("next"):
-        return redirect(str(request.args.get("next")))
+        if next.startswith("/") or next.startswith("https://blog.projectrexa.dedyn.io"):
+            return redirect(str(request.args.get("next")))
     return redirect(url_for("index"))
 
 
