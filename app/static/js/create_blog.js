@@ -16,7 +16,9 @@ let newPostForm = document.getElementById("new-post-form");
 newPostForm.addEventListener("submit", (e) => {
   e.preventDefault();
   let title = document.getElementById("title").value;
-  let category = document.getElementById("category").value;
+  let csrfToken = document.getElementById("csrf_token").value;
+  let visibility = document.getElementById("visibility").value;
+  console.log(visibility);
   let content = tinymce.get("naked").getContent();
   let tags = document.getElementById("tags").value;
   let summary = document.getElementById("summary").value;
@@ -25,13 +27,14 @@ newPostForm.addEventListener("submit", (e) => {
   
   let formData = new FormData();
   formData.append("title", title);
-  formData.append("category", category);
+  formData.append("visibility", visibility);
   formData.append("content", content);
   formData.append("tags", tags);
   formData.append("summary", summary);
+  formData.append("csrf_token", csrfToken);
   formData.append("cover_image", coverImge);
 
-  fetch("/admin/blogs/create", {
+  fetch(window.location.pathname, {
     method: "POST",
     body: formData,
   })

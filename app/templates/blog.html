@@ -28,7 +28,13 @@
               {{(blog.created_at | string) | format_timestamp}}
             </p>
           </div>
+          {% if session['admin'] %}
+          <div class="blog-actions">
+            <button class="edit-blog" onclick="window.location.replace('/admin/blogs/edit/{{ blog._id }}')">Edit</button>
+            <button class="delete-blog" onclick="deleteBlog('{{ blog._id }}')">Delete</button>
+          </div>
         </div>
+        {% endif %}
       </div>
       <div class="blog-content">
         <div class="blog-cover-image">

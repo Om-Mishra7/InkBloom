@@ -44,6 +44,8 @@ main {
 }
 
 .blog-author {
+  width: 100%;
+  flex-wrap: wrap;
   display: flex;
   flex-direction: row;
   align-items: center;
@@ -383,6 +385,30 @@ textarea {
   border-radius: 5px;
 }
 
+.blog-actions {
+  margin-left: auto;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 1em;
+  padding: 0 10px 0px 10px;
+}
+
+.blog-actions button {
+  padding: 10px 20px;
+  border-radius: 5px;
+  border: none;
+  background-color: #2c2c2c;
+  color: #fff;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.delete-blog {
+  background-color: #bb2124 !important;
+}
+
 @media screen and (max-width: 800px) {
   main {
     width: 90%;
@@ -396,6 +422,13 @@ textarea {
   .blog-suggested-blog {
     flex: auto;
     width: 100%;
+  }
+
+  .blog-actions {
+    margin-left: 0;
+    margin-top: 20px;
+    justify-content: flex-start;
+    padding: 0 10px 0px 10px;
   }
 
 }

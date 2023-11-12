@@ -13,6 +13,7 @@ This file contains the server side code for the web application InkBloom, a powe
 from math import e
 import os
 import cgi
+import html
 import secrets
 from datetime import datetime, timezone
 from email import utils
@@ -180,15 +181,24 @@ def index():
     """
     This function renders the home page of the application.
     """
-    if request.remote_addr == "127.0.0.1":
-        session["logged_in"] = True
-        session["user_id"] = 106005919
-        session["user_name"] = "ProjectRexa"
-        session["profile_pic"] = "https://avatars.githubusercontent.com/u/106005919?v=4"
-        session["admin"] = True
-        session["blocked"] = False
-    blogs = DATABASE["BLOGS"].find().sort("_id", -1).limit(10)
-    featured_blogs = DATABASE["BLOGS"].find({"featured": True}).limit(3)
+    if session.get("admin"):
+        blogs = DATABASE["BLOGS"].find().sort("_id", -1).limit(10)
+        featured_blogs = (
+            DATABASE["BLOGS"].find({"featured": True}).sort("_id", -1).limit(3)
+        )
+        return render_template(
+            "index.html",
+            blogs=blogs,
+            featured_blogs=featured_blogs,
+        )
+
+    blogs = DATABASE["BLOGS"].find({"visibility": "public"}).sort("_id", -1).limit(10)
+    featured_blogs = (
+        DATABASE["BLOGS"]
+        .find({"featured": True, "visibility": "public"})
+        .sort("_id", -1)
+        .limit(3)
+    )
     return render_template(
         "index.html",
         blogs=blogs,
@@ -205,6 +215,9 @@ def blog(blog_slug):
     comments = DATABASE["COMMENTS"].find({"blog_slug": blog_slug})
     comments_list = list(comments)
     if blog:
+        if blog["visibility"] == "private" and session.get("admin") is False:
+            abort(404)
+
         suggested_blogs = (
             DATABASE["BLOGS"].find({"tags": {"$in": blog.get("tags", [])}}).limit(2)
         )
@@ -259,7 +272,7 @@ def create_blog():
                     }, 400
                 blog_title = request.form.get("title")
                 blog_content = request.form.get("content")
-                category = request.form.get("category")
+                visibility = request.form.get("visibility")
                 blog_tags = [
                     tag.strip().lower()
                     for tag in request.form.get("tags", "").split(",")
@@ -282,18 +295,6 @@ def create_blog():
 
         while DATABASE["BLOGS"].find_one({"slug": blog_slug}):
             blog_slug = blog_slug + "-" + secrets.token_hex(4)
-
-        if category == "dev-log":
-            if blog_content:
-                blog_content = (
-                    f"<h1> {datetime.now().strftime('%d %B %Y')} </h1> <br>"
-                    + blog_content
-                )
-            else:
-                return {
-                    "status": "error",
-                    "message": "Dev logs cannot be empty!",
-                }, 400
 
         if not blog_cover_image or blog_cover_image.filename == "":
             return {"status": "error", "message": "No cover image found!"}, 400
@@ -337,7 +338,7 @@ def create_blog():
         blog = {
             "title": blog_title,
             "content": blog_content,
-            "category": category,
+            "visibility": visibility,
             "tags": blog_tags,
             "summary": blog_summary,
             "slug": blog_slug,
@@ -369,7 +370,7 @@ def create_blog():
         return {
             "status": "success",
             "message": "Blog created successfully!",
-            "blog_slug": cgi.escape(blog_slug),
+            "blog_slug": blog_slug,
         }, 200
 
     elif session.get("logged_in") and session.get("admin"):
@@ -378,11 +379,123 @@ def create_blog():
         abort(401)
 
 
-# @app.route("/admin/blogs/edit/<blog_id>", methods=["GET", "POST"])
-# def edit_blog(blog_id):
-#     """
-#     This function renders the edit blog page of the application
-#     """
+@app.route("/admin/blogs/edit/<blog_id>", methods=["GET", "POST"])
+def edit_blog(blog_id):
+    """
+    This function renders the edit blog page of the application
+    """
+    if request.method == "POST":
+        try:
+            if session["logged_in"] and session["admin"]:
+                if request.form.get("csrf_token"):
+                    if not check_crsf_token(request.form.get("csrf_token")):
+                        return {
+                            "status": "error",
+                            "message": "The request was discarded because it did not contain a valid CSRF token!",
+                        }, 400
+                else:
+                    return {
+                        "status": "error",
+                        "message": "The request was discarded because it did not contain a CSRF token!",
+                    }, 400
+                blog_title = request.form.get("title")
+                blog_content = request.form.get("content")
+                visibilty = request.form.get("visibility")
+                blog_tags = [
+                    tag.strip().lower()
+                    for tag in request.form.get("tags", "").split(",")
+                    if tag.strip()
+                ]
+                blog_summary = request.form.get("summary")
+                blog_slug = blog_title.replace(" ", "-").lower()
+                blog_cover_image = request.files.get("cover_image")
+                authour = session.get("user_id")
+                authour_name = session.get("user_name")
+                blog_featured = "featured" in blog_tags
+                blog_tags = [tag for tag in blog_tags if tag != "featured"]
+            else:
+                abort(401)
+        except Exception:
+            return {
+                "status": "error",
+                "message": "Please fill all the fields correctly",
+            }, 400
+
+        blog = DATABASE["BLOGS"].find_one({"_id": ObjectId(blog_id)})
+        if not blog:
+            return {"status": "error", "message": "Invalid blog ID!"}, 400
+
+        if not blog_cover_image or blog_cover_image.filename == "":
+            blog_cover_image_url = blog["cover_image"]
+        else:
+            valid_image_types = [
+                "image/png",
+                "image/jpeg",
+                "image/jpg",
+                "image/gif",
+                "image/webp",
+                "svg+xml",
+            ]
+            if blog_cover_image.content_type not in valid_image_types:
+                return {
+                    "status": "error",
+                    "message": "The cover image does not have a valid image format!",
+                }, 400
+
+            try:
+                response = requests.post(
+                    "http://ather.api.projectrexa.dedyn.io/upload",
+                    files={"file": blog_cover_image.read()},
+                    data={
+                        "key": f"projectrexa/blog/assets/{secrets.token_hex(16)}",
+                        "content_type": blog_cover_image.content_type,
+                        "public": "true",
+                    },
+                    headers={"X-Authorization": os.getenv("ATHER_API_KEY") or ""},
+                    timeout=10,
+                ).json()
+                blog_cover_image_url = response.get("access_url")
+            except Exception as e:
+                return {
+                    "status": "error",
+                    "message": "Something went wrong while uploading the file!",
+                }, 500
+
+            if not blog_cover_image_url:
+                return {"status": "error", "message": "No cover image found!"}, 400
+
+        DATABASE["BLOGS"].update_one(
+            {"_id": ObjectId(blog_id)},
+            {
+                "$set": {
+                    "title": blog_title,
+                    "content": blog_content,
+                    "visibility": visibilty,
+                    "tags": blog_tags,
+                    "summary": blog_summary,
+                    "slug": blog_slug,
+                    "cover_image": blog_cover_image_url,
+                    "featured": blog_featured,
+                    "read_time": len(blog_content.split(" ")) // 300,
+                    "last_updated_at": datetime.now(),
+                }
+            },
+        )
+
+        return {
+            "status": "success",
+            "message": "Blog updated successfully!",
+            "blog_slug": blog_slug,
+        }, 200
+
+    elif session.get("logged_in") and session.get("admin"):
+        blog = DATABASE["BLOGS"].find_one({"_id": ObjectId(blog_id)})
+        if not blog:
+            abort(404)
+        blog["tags"].append("featured" if blog["featured"] else "")
+        return render_template("create_blog.html", blog=blog)
+    else:
+        abort(401)
 
 
 @app.route("/user/authorize", methods=["GET"])
@@ -392,7 +505,7 @@ def authentication():
 
     error_message = request.args.get("error")
     if error_message:
-        return {"status": "error", "message": cgi.escape(error_message)}, 400
+        return {"status": "error", "message": html.escape(error_message)}, 400
 
     next_url = request.args.get("next")
     if next_url:
@@ -504,7 +617,7 @@ def rss():
     """
     This function renders the RSS feed of the application.
     """
-    blogs = DATABASE["BLOGS"].find().sort("_id", -1)
+    blogs = DATABASE["BLOGS"].find({"visibility": "public"}).sort("_id", -1)
     date = utils.format_datetime(datetime.now(timezone.utc))
 
     return (
@@ -519,7 +632,7 @@ def sitemap():
     """
     This function renders the sitemap of the application.
     """
-    blogs = DATABASE["BLOGS"].find().sort("_id", -1)
+    blogs = DATABASE["BLOGS"].find({"visibility": "public"}).sort("_id", -1)
     # 2022-06-04
     date = datetime.now(timezone.utc).strftime("%Y-%m-%d")
     return (
@@ -809,6 +922,24 @@ def nuke_user(user_id):
             return {"status": "success", "message": "User blocked successfully!"}, 200
 
         return {"status": "error", "message": "Invalid user ID!"}, 400
+    return {
+        "status": "error",
+        "message": "You are not authorized to access this page!",
+    }, 401
+
+
+@app.route("/api/v1/admin/blogs/<blog_id>", methods=["DELETE"])
+def delete_blog(blog_id):
+    if request.method == "DELETE" and session.get("logged_in") and session.get("admin"):
+        blog = DATABASE["BLOGS"].find_one({"_id": ObjectId(blog_id)})
+        if blog:
+            DATABASE["BLOGS"].delete_one({"_id": ObjectId(blog_id)})
+            DATABASE["COMMENTS"].delete_many({"blog_slug": blog["slug"]})
+            return {
+                "status": "success",
+                "message": "Blog deleted successfully!",
+            }, 200
+        return {"status": "error", "message": "Invalid blog ID!"}, 400
     return {
         "status": "error",
         "message": "You are not authorized to access this page!",

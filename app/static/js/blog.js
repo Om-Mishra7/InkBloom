@@ -131,6 +131,32 @@ function blockUser(userId) {
     );
 }
 
+function deleteBlog(id) {
+  fetch(`/api/v1/admin/blogs/${id}`, {
+    method: "DELETE",
+    headers: {
+      "Content-Type": "application/json",
+    },
+  })
+    .then((response) => {
+      return response.json();
+    }
+    )
+    .then((data) => {
+      if (data.status === "success") {
+        window.location.href = "/";
+      }
+      else {
+        createAlert("danger", data.message);
+      }
+    }
+    )
+    .catch((error) => {
+      console.log(error);
+    }
+    );
+}
+
 hljs.highlightAll(); // Ensure that the code blocks are still syntax highlighted
 
 viewStats();

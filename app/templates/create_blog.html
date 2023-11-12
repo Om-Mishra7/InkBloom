@@ -22,32 +22,68 @@
     <br />
     <br />
     <form id="new-post-form" enctype="multipart/form-data">
-      <input type="hidden" id="csrf_token" name="csrf_token" value="{{ csrf_token }}">
+      <input
+        type="hidden"
+        id="csrf_token"
+        name="csrf_token"
+        value="{{ csrf_token }}"
+      />
       <div class="form-top">
         <input
           type="text"
           id="title"
           name="title"
           placeholder="Enter blog title"
+          {%
+          if
+          blog
+          %}
+          value="{{ blog.title | default('') }}"
+          {%
+          else
+          %}
+          value=""
+          {%
+          endif
+          %}
         />
         <input
           type="text"
           id="tags"
           name="tags"
           placeholder="Enter blog tags (comma separated)"
+          {% if blog %}
+          value = "{% for tag in blog.tags %}{{ tag | upper }}, {% endfor %}"
+          {% else %}
+          value=""
+          {% endif %}
         />
       </div>
       <div class="form-top">
         <div class="container">
-          <input type="file" id="file-input" />
+          <input
+            type="file"
+            id="file-input"
+            name="file-input"
+            accept="image/*"
+          />
           <label for="file-input">
             <i class="fa-solid fa-arrow-up-from-bracket"></i>
-            <svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 -960 960 960" width="24"><path d="M440-200h80v-167l64 64 56-57-160-160-160 160 57 56 63-63v167ZM240-80q-33 0-56.5-23.5T160-160v-640q0-33 23.5-56.5T240-880h320l240 240v480q0 33-23.5 56.5T720-80H240Zm280-520v-200H240v640h480v-440H520ZM240-800v200-200 640-640Z"/></svg>&nbsp; Choose cover image for blog
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              height="24"
+              viewBox="0 -960 960 960"
+              width="24"
+            >
+              <path
+                d="M440-200h80v-167l64 64 56-57-160-160-160 160 57 56 63-63v167ZM240-80q-33 0-56.5-23.5T160-160v-640q0-33 23.5-56.5T240-880h320l240 240v480q0 33-23.5 56.5T720-80H240Zm280-520v-200H240v640h480v-440H520ZM240-800v200-200 640-640Z"
+              /></svg
+            >&nbsp; Choose cover image for blog
           </label>
         </div>
-        <select id="category" name="category">
-          <option value="blog" selected>Blog</option>
-          <option value="dev-log">Dev Log</option>
+        <select id="visibility" name="visibility">
+          <option value="public">Public</option>
+          <option value="private" selected>Private</option>
         </select>
       </div>
       <textarea
@@ -55,19 +91,22 @@
         class="summary"
         name="summary"
         placeholder="Enter blog summary"
-      ></textarea>
+      >{% if blog %}{{ blog.summary | default('') | trim | replace('\n', '') }}{% endif %}</textarea>
       <div class="editor">
         <textarea id="naked">
-          <p>Enter blog content</p>
+          {% if blog %}
+          {{ blog.content | default('') }}
+          {% else %}
+          {% endif %}
+        
       </textarea
         >
       </div>
       <div class="form-bottom">
-        <input type="submit" value="Publish" />
+        <input type="submit" value="Submit" />
       </div>
     </form>
     {% include 'partials/footer.html' %}
-
 
     <script src="/static/js/create_blog.js"></script>
   </body>
