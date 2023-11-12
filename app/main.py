@@ -820,11 +820,6 @@ def delete_user_comments(comment_id):
     if request.method == "DELETE" and session.get("logged_in") and session.get("admin"):
         comment = DATABASE["COMMENTS"].find_one({"_id": ObjectId(comment_id)})
         if comment:
-            if comment["user_role"] == "admin":
-                return {
-                    "status": "error",
-                    "message": "Privilege level is not sufficient to perform this action!",
-                }, 400
             DATABASE["COMMENTS"].delete_one({"_id": ObjectId(comment_id)})
             DATABASE["BLOGS"].update_one(
                 {"slug": comment["blog_slug"]},
