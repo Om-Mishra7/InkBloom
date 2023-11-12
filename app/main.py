@@ -142,7 +142,7 @@ def add_header(response):
     if request.remote_addr == "127.0.0.1":
         return response
     response.headers["Access-Control-Allow-Origin"] = "*"
-    response.headers["Cache-Control"] = "private, max-age=300"
+    response.headers["Cache-Control"] = "no-cache, must-revalidate"
     response.headers["X-Frame-Options"] = "SAMEORIGIN"
     response.headers["X-Content-Type-Options"] = "nosniff"
     response.headers["X-XSS-Protection"] = "1; mode=block"
