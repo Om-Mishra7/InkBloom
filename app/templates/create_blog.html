@@ -22,6 +22,7 @@
     <br />
     <br />
     <form id="new-post-form" enctype="multipart/form-data">
+      <input type="hidden" id="csrf_token" name="csrf_token" value="{{ csrf_token }}">
       <div class="form-top">
         <input
           type="text"

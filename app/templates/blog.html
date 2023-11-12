@@ -67,7 +67,8 @@
           </div>
           {% else %}
           <div class="blog-comment-form">
-            <form action="/blog/{{ blog.id }}/comment" method="POST" id="comment-form">
+            <form action="/blog/{{ blog._id }}/comment" method="POST" id="comment-form">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token }}" id="csrf_token" />
               <textarea
                 name="content"
                 id="comment-content"
@@ -89,7 +90,7 @@
             {% if comment.user_role == 'admin' %}
             <div class="blog-comment moderator-comment" data-id = "{{ comment._id }}" data-user-id = "{{ comment.commented_by }}">
               {% else %}
-              <div class="blog-comment" data-id = "{{ comment._id }}" data-user-id = "{{ comment.commented_by }}">
+              <div class="blog-comment">
               {% endif %}
             
               <div class="blog-comment-author">
@@ -105,10 +106,10 @@
                 </div>
               </div>
               <p class="blog-comment-content">{{ comment.comment | capitalize }}</p>
-              {% if session['admin'] %}
+              {% if session['admin'] and comment.user_role != 'admin' %}
               <div class="blog-comment-actions">
-                <button class="delete-comment">Delete</button>
-                <button class="block-user">Block User</button>
+                <button class="delete-comment" onclick="deleteComment('{{ comment._id }}')" data-comment-id = "{{ comment._id }}">Delete</button>
+                <button class="block-user" onclick="blockUser('{{ comment.commented_by }}')" data-user-id = "{{ comment.commented_by }}">Block User</button>
               </div>
               {% endif %}
             </div>

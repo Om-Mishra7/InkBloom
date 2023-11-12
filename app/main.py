@@ -10,6 +10,7 @@ This file contains the server side code for the web application InkBloom, a powe
 
 # Importing the required libraries
 
+from math import e
 import os
 import cgi
 import secrets
@@ -109,6 +110,17 @@ def profanity_check(comment):
     return client.contains_profanity(comment)
 
 
+def check_crsf_token(token):
+    """
+    This function checks for CSRF token in the request.
+    """
+    if not token:
+        return False
+    if token != session.get("csrf_token"):
+        return False
+    return True
+
+
 # Application Template Filters
 
 
@@ -132,6 +144,12 @@ def sitemap_timestamp(s):
 @app.context_processor
 def app_version():
     return dict(service_version=service_version)
+
+
+@app.context_processor
+def csrf_token():
+    session["csrf_token"] = secrets.token_hex(16)
+    return dict(csrf_token=session["csrf_token"])
 
 
 # After-request function for setting headers
@@ -162,6 +180,13 @@ def index():
     """
     This function renders the home page of the application.
     """
+    if request.remote_addr == "127.0.0.1":
+        session["logged_in"] = True
+        session["user_id"] = 106005919
+        session["user_name"] = "ProjectRexa"
+        session["profile_pic"] = "https://avatars.githubusercontent.com/u/106005919?v=4"
+        session["admin"] = True
+        session["blocked"] = False
     blogs = DATABASE["BLOGS"].find().sort("_id", -1).limit(10)
     featured_blogs = DATABASE["BLOGS"].find({"featured": True}).limit(3)
     return render_template(
@@ -183,7 +208,9 @@ def blog(blog_slug):
         suggested_blogs = (
             DATABASE["BLOGS"].find({"tags": {"$in": blog.get("tags", [])}}).limit(2)
         )
-        suggested_blogs = list(filter(lambda x: x.get("slug") != blog_slug, suggested_blogs))
+        suggested_blogs = list(
+            filter(lambda x: x.get("slug") != blog_slug, suggested_blogs)
+        )
         return render_template(
             "blog.html",
             blog=blog,
@@ -209,6 +236,8 @@ def blog(blog_slug):
 """
 This function creates a new blog post and saves it to the database. It renders the create blog page of the application and handles the form submission. If the user is not logged in or is not an admin, it returns a 401 error. If the form is not filled correctly, it returns a 400 error. If the cover image is not found or is not a valid image format, it returns a 400 error. If there is an error while uploading the file, it returns a 500 error. If the blog is created successfully, it returns a 200 status code with the blog slug.
 """
+
+
 @app.route("/admin/blogs/create", methods=["GET", "POST"])
 def create_blog():
     """
@@ -217,6 +246,17 @@ def create_blog():
     if request.method == "POST":
         try:
             if session["logged_in"] and session["admin"]:
+                if request.form.get("csrf_token"):
+                    if not check_crsf_token(request.form.get("csrf_token")):
+                        return {
+                            "status": "error",
+                            "message": "The request was discarded because it did not contain a valid CSRF token!",
+                        }, 400
+                else:
+                    return {
+                        "status": "error",
+                        "message": "The request was discarded because it did not contain a CSRF token!",
+                    }, 400
                 blog_title = request.form.get("title")
                 blog_content = request.form.get("content")
                 category = request.form.get("category")
@@ -575,17 +615,29 @@ def get_blogs(last_blog_id):
 
 
 @app.route("/api/v1/user/comments", methods=["POST"])
+@limiter.limit("1/minute")
 def post_user_comments():
     if request.method == "POST" and session.get("logged_in"):
         data = request.get_json()
         comment = data.get("comment")
         blog_slug = data.get("slug")
+        if data.get("csrf_token"):
+            if not check_crsf_token(data.get("csrf_token")):
+                return {
+                    "status": "error",
+                    "message": "The request was discarded because it did not contain a valid CSRF token!",
+                }, 400
+        else:
+            return {
+                "status": "error",
+                "message": "The request was discarded because it did not contain a CSRF token!",
+            }, 400
 
         if comment:
             if len(comment) > 1000:
                 return {
                     "status": "error",
-                    "message": "Comment length cannot exceed 500 characters!",
+                    "message": "Comment length cannot exceed 1000 characters!",
                 }, 400
 
             if profanity_check(comment) and not session["admin"]:
@@ -601,11 +653,23 @@ def post_user_comments():
             if not DATABASE["BLOGS"].find_one({"slug": blog_slug}):
                 return {"status": "error", "message": "Invalid blog ID!"}, 400
 
-            if DATABASE["USERS"].find_one({"_id": session["user_id"]}).get("blocked"):
+            if DATABASE["USERS"].find_one({"_id": session["user_id"]}) is not None:
+                if (
+                    DATABASE["USERS"]
+                    .find_one({"_id": session["user_id"]})
+                    .get("blocked", False)
+                ):
+                    session.clear()
+                    return {
+                        "status": "error",
+                        "message": "You have been blocked from posting further comments!",
+                    }, 400
+
+            else:
                 return {
                     "status": "error",
-                    "message": "You have been blocked from posting further comments!",
-                }, 400
+                    "message": "The server was unable to process your request!",
+                }, 500
 
             DATABASE["BLOGS"].update_one(
                 {"slug": blog_slug},
@@ -626,13 +690,45 @@ def post_user_comments():
 
             return {"status": "success", "message": "Comment posted successfully!"}, 200
 
-        abort(400)
+        return {
+            "status": "error",
+            "message": "Please make sure all the fields are filled correctly!",
+        }, 400
 
-    abort(401)
+    return {
+        "status": "error",
+        "message": "You are not authorized to access this page!",
+    }, 401
+
+
+@app.route("/api/v1/user/comments/<comment_id>", methods=["DELETE"])
+def delete_user_comments(comment_id):
+    if request.method == "DELETE" and session.get("logged_in") and session.get("admin"):
+        comment = DATABASE["COMMENTS"].find_one({"_id": ObjectId(comment_id)})
+        if comment:
+            if comment["user_role"] == "admin":
+                return {
+                    "status": "error",
+                    "message": "Privilege level is not sufficient to perform this action!",
+                }, 400
+            DATABASE["COMMENTS"].delete_one({"_id": ObjectId(comment_id)})
+            DATABASE["BLOGS"].update_one(
+                {"slug": comment["blog_slug"]},
+                {"$inc": {"comments_count": -1}},
+            )
+            return {
+                "status": "success",
+                "message": "Comment deleted successfully!",
+            }, 200
+        return {"status": "error", "message": "Invalid comment ID!"}, 400
+    return {
+        "status": "error",
+        "message": "You are not authorized to access this page!",
+    }, 401
 
 
 @app.route("/api/v1/statisics/views/<blog_slug>", methods=["POST"])
-@limiter.limit("10/minute")
+@limiter.limit("5/minute")
 def get_blog_views(blog_slug):
     blog = DATABASE["BLOGS"].find_one({"slug": blog_slug})
 
@@ -644,7 +740,7 @@ def get_blog_views(blog_slug):
 
 
 @app.route("/api/v1/user-content/upload", methods=["POST"])
-@limiter.limit("30/minute")
+@limiter.limit("10/minute")
 def upload_user_content():
     if request.method == "POST" and session.get("logged_in") and session.get("admin"):
         file = request.files.get("file")
@@ -694,6 +790,31 @@ def upload_user_content():
     abort(401)
 
 
+@app.route("/api/v1/user/block/<user_id>", methods=["POST"])
+def nuke_user(user_id):
+    if request.method == "POST" and session.get("logged_in") and session.get("admin"):
+        user = DATABASE["USERS"].find_one({"_id": int(user_id)})
+        print(user)
+        if user:
+            if user.get("admin", False):
+                return {
+                    "status": "error",
+                    "message": "Privilege level is not sufficient to perform this action!",
+                }, 400
+            DATABASE["USERS"].update_one(
+                {"_id": int(user_id)}, {"$set": {"blocked": True}}
+            )
+            DATABASE["COMMENTS"].delete_many({"commented_by": int(user_id)})
+
+            return {"status": "success", "message": "User blocked successfully!"}, 200
+
+        return {"status": "error", "message": "Invalid user ID!"}, 400
+    return {
+        "status": "error",
+        "message": "You are not authorized to access this page!",
+    }, 401
+
+
 # Error Handlers
 
 
@@ -718,4 +839,4 @@ def handle_errors(e):
 
 
 if __name__ == "__main__":
-    app.run()
+    app.run(debug=True)

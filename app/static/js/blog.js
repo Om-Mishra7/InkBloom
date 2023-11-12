@@ -44,6 +44,7 @@ commentForm.addEventListener("submit", (e) => {
   let commentData = {
     comment: comment,
     slug: slug,
+    crsf_token: document.getElementById("crsf_token").value,
   };
   fetch("/api/v1/user/comments", {
     method: "POST",
@@ -72,6 +73,63 @@ commentForm.addEventListener("submit", (e) => {
 }
 );
 
+function deleteComment(commentId) {
+  fetch(`/api/v1/user/comments/${commentId}`, {
+    method: "DELETE",
+    headers: {
+      "Content-Type": "application/json",
+    },
+  })
+    .then((response) => {
+      return response.json();
+    }
+    )
+    .then((data) => {
+      if (data.status === "success") {
+        deleteCommentsButtons = document.getElementsByClassName("delete-comment");
+        for (let i = 0; i < deleteCommentsButtons.length; i++) {
+          if (deleteCommentsButtons[i].getAttribute("data-comment-id") === commentId) {
+            deleteCommentsButtons[i].parentElement.parentElement.remove();
+            break;
+          }
+        }
+      }
+      else {
+        createAlert("danger", data.message);
+      }
+    }
+    )
+    .catch((error) => {
+      console.log(error);
+    }
+    );
+}
+
+function blockUser(userId) {
+  fetch(`/api/v1/user/block/${userId}`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+  })
+    .then((response) => {
+      return response.json();
+    }
+    )
+    .then((data) => {
+      if (data.status === "success") {
+        window.location.reload();
+      }
+      else {
+        createAlert("danger", data.message);
+      }
+    }
+    )
+    .catch((error) => {
+      console.log(error);
+    }
+    );
+}
 
 hljs.highlightAll(); // Ensure that the code blocks are still syntax highlighted
 
