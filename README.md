@@ -52,6 +52,40 @@ Welcome to ProjectRexa InkBloom, a versatile blog application built with Flask. 
    GITHUB_CLIENT_SECRET=
    ```
 
+   
+   For the local file storage workaround, you can modify the code where the file is uploaded to use local storage instead of Ather API. Replace the relevant code snippet in your `create_blog` route. Here's a basic example:
+   
+   ```python
+   # Modify this part of your code in the create_blog route
+   try:
+       # Existing code for Ather API upload
+       response = requests.post(
+           "http://ather.api.projectrexa.dedyn.io/upload",
+           files={"file": blog_cover_image.read()},
+           data={
+               "key": f"projectrexa/blog/assets/{secrets.token_hex(16)}",
+               "content_type": blog_cover_image.content_type,
+               "public": "true",
+           },
+           headers={"X-Authorization": os.getenv("ATHER_API_KEY") or ""},
+           timeout=10,
+       ).json()
+       blog_cover_image_url = response.get("access_url")
+   
+       # Replace the above code with local storage
+       # Assuming you have a 'uploads' directory in your project
+       # You can customize the storage path and filename as needed
+       local_storage_path = f"uploads/{secrets.token_hex(16)}_{blog_cover_image.filename}"
+       blog_cover_image.save(local_storage_path)
+       blog_cover_image_url = local_storage_path
+   
+   except Exception as e:
+       return {
+           "status": "error",
+           "message": "Something went wrong while uploading the file!",
+       }, 500
+
+
 5. Run the application:
 
    ```bash
