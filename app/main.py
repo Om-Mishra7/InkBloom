@@ -206,6 +206,9 @@ def blog(blog_slug):
     abort(404)
 
 
+"""
+This function creates a new blog post and saves it to the database. It renders the create blog page of the application and handles the form submission. If the user is not logged in or is not an admin, it returns a 401 error. If the form is not filled correctly, it returns a 400 error. If the cover image is not found or is not a valid image format, it returns a 400 error. If there is an error while uploading the file, it returns a 500 error. If the blog is created successfully, it returns a 200 status code with the blog slug.
+"""
 @app.route("/admin/blogs/create", methods=["GET", "POST"])
 def create_blog():
     """
@@ -585,7 +588,7 @@ def post_user_comments():
                     "message": "Comment length cannot exceed 500 characters!",
                 }, 400
 
-            if profanity_check([comment]):
+            if profanity_check([comment]) and not session["admin"]:
                 DATABASE["USERS"].update_one(
                     {"_id": session["user_id"]}, {"$set": {"blocked": True}}
                 )
