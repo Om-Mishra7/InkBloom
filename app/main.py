@@ -728,8 +728,9 @@ def get_blogs(last_blog_id):
 
 
 @app.route("/api/v1/user/comments", methods=["POST"])
-@limiter.limit("1/minute")
+@limiter.limit("5/minute")
 def post_user_comments():
+
     if request.method == "POST" and session.get("logged_in"):
         data = request.get_json()
         comment = data.get("comment")

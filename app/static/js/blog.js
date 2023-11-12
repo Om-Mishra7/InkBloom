@@ -44,7 +44,7 @@ commentForm.addEventListener("submit", (e) => {
   let commentData = {
     comment: comment,
     slug: slug,
-    crsf_token: document.getElementById("crsf_token").value,
+    csrf_token: document.getElementById("csrf_token").value,
   };
   fetch("/api/v1/user/comments", {
     method: "POST",
