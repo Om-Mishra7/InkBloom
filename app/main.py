@@ -588,7 +588,7 @@ def post_user_comments():
                     "message": "Comment length cannot exceed 500 characters!",
                 }, 400
 
-            if profanity_check([comment]) and not session["admin"]:
+            if profanity_check(comment) and not session["admin"]:
                 DATABASE["USERS"].update_one(
                     {"_id": session["user_id"]}, {"$set": {"blocked": True}}
                 )
