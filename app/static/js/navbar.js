@@ -45,7 +45,7 @@ searchBar.addEventListener("keyup", function (event) {
                 searchResults.appendChild(result);
               });
               document.addEventListener("click", function (event) {
-                let searchResults = document.getElementById("search-results-page");
+                let searchResults = document.getElementById("search-results");
                 if (event.target != searchResults) {
                   searchResults.style.display = "none";
                 }

@@ -672,19 +672,40 @@ def search():
     """
     query = request.args.get("query")
     if query and len(query) > 2:
-        blogs = (
-            DATABASE["BLOGS"]
-            .find(
-                {
-                    "$or": [
-                        {"title": {"$regex": query, "$options": "i"}},
-                        {"tags": {"$regex": query, "$options": "i"}},
-                        {"summary": {"$regex": query, "$options": "i"}},
-                    ]
-                }
+        # Allow only public blogs to be searched by non-admin users
+        if session.get("admin"):
+            blogs = (
+                DATABASE["BLOGS"]
+                .find(
+                    {
+                        "$or": [
+                            {"title": {"$regex": query, "$options": "i"}},
+                            {"tags": {"$regex": query, "$options": "i"}},
+                            {"summary": {"$regex": query, "$options": "i"}},
+                        ]
+                    }
+                )
+                .limit(3)
             )
-            .limit(3)
-        )
+        else:
+            blogs = (
+                DATABASE["BLOGS"]
+                .find(
+                    {
+                        "$and": [
+                            {"visibility": "public"},
+                            {
+                                "$or": [
+                                    {"title": {"$regex": query, "$options": "i"}},
+                                    {"tags": {"$regex": query, "$options": "i"}},
+                                    {"summary": {"$regex": query, "$options": "i"}},
+                                ]
+                            },
+                        ]
+                    }
+                )
+                .limit(3)
+            )
 
         if blogs:
             blogs = [
