@@ -132,6 +132,9 @@ function blockUser(userId) {
 }
 
 function deleteBlog(id) {
+  if (!confirm("Are you sure you want to delete this blog?")) {
+    return;
+  }
   fetch(`/api/v1/admin/blogs/${id}`, {
     method: "DELETE",
     headers: {
