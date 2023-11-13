@@ -37,7 +37,7 @@ main {
 }
 
 .blog-summary {
-  font-size: 1.2rem;
+  font-size: 1.1rem;
   color: #d8d4cf;
   margin-bottom: 1em;
   padding: 0 10px;
@@ -91,10 +91,14 @@ main {
   padding: 0 10px;
 }
 
-.blog-content h2, h3, h4, h5, h6 {
+.blog-content h1, h2, h3, h4, h5, h6 {
   padding-top: 20px;
   color: #fff;
-  font-size: 1.2rem;
+  font-size: 1.5rem;
+}
+
+.blog-content p {
+  font-size: 1rem;
 }
 
 .blog-cover-image {
@@ -132,7 +136,7 @@ pre code {
 }
 
 pre code span {
-  font-size: 0.9rem;
+  font-size: 1rem;
 }
 
 .blog-suggested-blogs-list{
@@ -188,8 +192,6 @@ pre code span {
   margin-top: 0.5em;
   font-weight: bold;
 }
-
-
 
 .blog-comments, .blog-suggested-blogs {
   padding: 0 10px;
