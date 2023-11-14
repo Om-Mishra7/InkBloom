@@ -514,7 +514,7 @@ def authentication():
     github_auth_url = "https://github.com/login/oauth/authorize"
     github_auth_url += "?client_id=" + os.getenv("GITHUB_CLIENT_ID")
     github_auth_url += (
-        "&redirect_uri=" + (os.getenv('LOCAL_GITHUB_REDIRECT_URL') or 'https://inkbloom.projectrexa.dedyn.io/user/github/callback')
+        "&redirect_uri=" + (os.getenv('LOCAL_GITHUB_REDIRECT_URL') or 'https://blog.projectrexa.dedyn.io/user/github/callback')
     )
     github_auth_url += "&read:user"
 
