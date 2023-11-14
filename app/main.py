@@ -512,11 +512,13 @@ def authentication():
         session["next"] = next_url
 
     github_auth_url = "https://github.com/login/oauth/authorize"
-    github_auth_url += "?client_id=d47204e1b7b5ecd7a543"
+    github_auth_url += "?client_id=" + os.getenv("GITHUB_CLIENT_ID")
     github_auth_url += (
-        "&redirect_uri=https://blog.projectrexa.dedyn.io/user/github/callback"
+        "&redirect_uri=" + (os.getenv('LOCAL_GITHUB_REDIRECT_URL') or 'https://inkbloom.projectrexa.dedyn.io')
     )
-    github_auth_url += "&scope=user:email"
+    github_auth_url += "&read:user"
+
+    print(github_auth_url)
 
     return redirect(github_auth_url)
 
@@ -551,18 +553,6 @@ def github_callback():
             timeout=5,
         ).json()
 
-        if user_data["email"] is None:
-            email_response = requests.get(
-                "https://api.github.com/user/emails",
-                headers={"Authorization": f"Bearer {access_token}"},
-                timeout=5,
-            ).json()
-
-            for record in email_response:
-                if record["primary"] is True:
-                    user_data["email"] = record["email"]
-                    break
-
         user = DATABASE["USERS"].find_one({"_id": user_data["id"]})
 
         if user is None:
@@ -570,7 +560,6 @@ def github_callback():
                 {
                     "_id": user_data["id"],
                     "name": user_data["name"] or "User",
-                    "email": user_data["email"],
                     "profile_pic": user_data["avatar_url"],
                     "admin": False,
                     "blocked": False,
@@ -583,7 +572,6 @@ def github_callback():
         session["logged_in"] = True
         session["user_id"] = user_data["id"]
         session["user_name"] = user_data["name"]
-        session["user_email"] = user_data["email"]
         session["profile_pic"] = user_data["avatar_url"]
         if user is not None:
             session["admin"] = user.get("admin", False)
@@ -987,4 +975,4 @@ def handle_errors(e):
 
 
 if __name__ == "__main__":
-    app.run(debug=False)
+    app.run(debug=False, port=80)
