@@ -907,7 +907,7 @@ def upload_user_content():
             return {
                 "status": "success",
                 "message": "File uploaded successfully!",
-                "location": f'https://wsrv.nl?url={response["access_url"]}&maxage=31d&q=75&output=webp',
+                "location": f'https://wsrv.nl?url={response["access_url"]}&maxage=31d&q=100&output=webp',
             }, 200
         except Exception as e:
             return {
