@@ -10,8 +10,8 @@ This file contains the server side code for the web application InkBloom, a powe
 
 # Importing the required libraries
 
-from math import e
 import os
+import re
 import cgi
 import html
 import secrets
@@ -120,6 +120,18 @@ def check_crsf_token(token):
     if token != session.get("csrf_token"):
         return False
     return True
+
+def calculate_read_time(html_content, words_per_minute=200, image_time_seconds=12):
+    text_content = re.sub(r'<[^>]*>', '', html_content)  # Remove HTML tags
+    word_count = len(re.findall(r'\w+', text_content))
+
+    text_read_time_minutes = word_count / words_per_minute
+
+    image_count = len(re.findall(r'<img [^>]*>', html_content))
+    image_read_time_seconds = image_count * image_time_seconds
+
+    total_read_time_minutes = text_read_time_minutes + (image_read_time_seconds / 60)
+    return int(total_read_time_minutes)
 
 
 # Application Template Filters
@@ -347,7 +359,7 @@ def create_blog():
             "authour_name": authour_name,
             "authour_profile_pic": session.get("profile_pic"),
             "featured": blog_featured,
-            "read_time": len(blog_content.split(" ")) // 300,
+            "read_time": calculate_read_time(blog_content),
             "views": 0,
             "comments_count": 0,
             "created_at": datetime.now(),
@@ -463,7 +475,7 @@ def edit_blog(blog_id):
 
             if not blog_cover_image_url:
                 return {"status": "error", "message": "No cover image found!"}, 400
-
+         
         DATABASE["BLOGS"].update_one(
             {"_id": ObjectId(blog_id)},
             {
@@ -476,7 +488,7 @@ def edit_blog(blog_id):
                     "slug": blog_slug,
                     "cover_image": blog_cover_image_url,
                     "featured": blog_featured,
-                    "read_time": len(blog_content.split(" ")) // 300,
+                    "read_time": calculate_read_time(blog_content),
                     "last_updated_at": datetime.now(),
                 }
             },
@@ -517,8 +529,6 @@ def authentication():
         "&redirect_uri=" + (os.getenv('LOCAL_GITHUB_REDIRECT_URL') or 'https://blog.projectrexa.dedyn.io/user/github/callback')
     )
     github_auth_url += "&read:user"
-
-    print(github_auth_url)
 
     return redirect(github_auth_url)
 
@@ -912,7 +922,6 @@ def upload_user_content():
 def nuke_user(user_id):
     if request.method == "POST" and session.get("logged_in") and session.get("admin"):
         user = DATABASE["USERS"].find_one({"_id": int(user_id)})
-        print(user)
         if user:
             if user.get("admin", False):
                 return {
