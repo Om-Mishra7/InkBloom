@@ -39,7 +39,7 @@
       <div class="blog-content">
         <div class="blog-cover-image">
           
-          <img src="//wsrv.nl?url={{blog.cover_image}}&maxage=31d&q=50&output=webp" alt="{{ blog.title }}" />
+          <img src="//wsrv.nl?url={{blog.cover_image}}&maxage=31d&q=50&h=800&w=800&output=webp" alt="{{ blog.title }}" />
         </div>
         {{ blog.content | safe }}
       </div>
@@ -51,7 +51,7 @@
           <div class="blog-suggested-blog">
             <a href="/blogs/{{ blog.slug }}">
               <div class="blog-suggested-blog-cover-image">
-                <img src="//wsrv.nl?url={{ blog.cover_image }}&maxage=31d&q=50&output=webp" alt="{{ blog.title }}" />
+                <img src="//wsrv.nl?url={{ blog.cover_image }}&maxage=31d&q=50&h=200&w=200&output=webp" alt="{{ blog.title }}" />
               </div>
               <div class="blog-suggested-blog-details">
                 <p class="blog-suggested-blog-title">{{ blog.title }}</p>
