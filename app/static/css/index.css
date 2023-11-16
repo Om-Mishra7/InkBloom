@@ -98,6 +98,7 @@ main .main-section {
 }
 
 .blog-summary {
+    margin-top: 5px;
     font-size: 0.9rem;
     font-weight: 400;
 
