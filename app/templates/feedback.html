@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    {% include 'partials/header.html' %}
+    <title>InkBloom | ProjectRexa</title>
+    <link rel="stylesheet" href="/static/css/feedback.css" />
+  </head>
+  <body>
+    {% include 'partials/navbar.html' %}
+    <br />
+    <br />
+    <br />
+    <br />
+    <br />
+    <form id="feedback-form">
+      <input
+        type="hidden"
+        id="csrf_token"
+        name="csrf_token"
+        value="{{ csrf_token }}"
+      />
+      <div class="form-top">
+        <textarea
+          id="feedback"
+          class="feedback-input"
+          name="feedback"
+          placeholder="We value your feedback! Please take a moment to share your thoughts with us. Your input helps us improve our services."
+        ></textarea>
+      </div>
+      <div class="form-bottom">
+        <input type="submit" value="Submit" />
+      </div>
+    </form>
+    {% include 'partials/footer.html' %}
+
+    <script src="/static/js/feedback.js"></script>
+  </body>
+</html>

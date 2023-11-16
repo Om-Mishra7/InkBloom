@@ -1,0 +1,85 @@
+body {
+    font-family: 'Roboto', sans-serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    margin: 0;
+    padding: 0;
+}
+
+form {
+    display: flex;
+    width: 60%;
+    height: 100%;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 80px;
+    margin-top: 50px;
+    gap: 20px;
+}
+
+.form-top {
+    display: flex;
+    width: 100%;
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: flex-start;
+    align-items: flex-start;
+    gap: 20px;
+    flex: 1;
+    height: max-content;
+}
+
+
+.form-bottom {
+    width: 100%;
+    display: flex;
+    flex-direction: row;
+    gap: 20px;
+    justify-content: flex-start;
+    align-items: flex-start;
+    flex: 1;
+    height: max-content;
+}
+
+
+form textarea {
+    width: 100%;
+    height: 400px;
+    padding: 15px;
+    border: 1px solid rgb(52, 56, 58);
+    resize: none;
+    font: inherit;
+    border-radius: 5px;
+}
+
+form textarea:focus {
+    outline: none;
+}
+
+
+input[type='submit'] {
+    width: 100%;
+    height: 45px;
+    border: none;
+    background-color: rgb(52, 56, 58);
+    color: white;
+    font: inherit;
+    cursor: pointer;
+    border-radius: 5px;
+}
+
+input[type='submit']:hover {
+    background-color: rgb(52, 56, 58);
+}
+
+@media only screen and (max-width: 800px) {
+
+    form {
+        width: 100%;
+        padding: 0 20px;
+    }
+
+}

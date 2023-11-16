@@ -171,6 +171,7 @@ nav {
     flex-direction: row;
     justify-content: flex-start;
     align-items: center;
+    margin-top: 10px;
     margin-bottom: 10px;
     padding: 0px 20px;
 }

@@ -609,6 +609,14 @@ def search_page():
     """
     return render_template("search.html")
 
+@app.route("/user/feedback")
+def feedback_page():
+    """
+    This function renders the feedback page of the application.
+    """
+    if session.get("logged_in"):
+        return render_template("feedback.html")
+    return abort(401)
 
 @app.route("/rss")
 def rss():
@@ -954,6 +962,51 @@ def delete_blog(blog_id):
                 "message": "Blog deleted successfully!",
             }, 200
         return {"status": "error", "message": "Invalid blog ID!"}, 400
+    return {
+        "status": "error",
+        "message": "You are not authorized to access this page!",
+    }, 401
+
+@app.route("/api/v1/feedback", methods=["POST"])
+@limiter.limit("5/minute")
+def feedback():
+    if request.method == "POST" and session.get("logged_in"):
+        data = request.get_json()
+        if data.get("csrf_token"):
+            if not check_crsf_token(data.get("csrf_token")):
+                return {
+                    "status": "error",
+                    "message": "The request was discarded because it did not contain a valid CSRF token!",
+                }, 400
+        else:
+            return {
+                "status": "error",
+                "message": "The request was discarded because it did not contain a CSRF token!",
+            }, 400
+        feedback = data.get("feedback")
+        if feedback:
+            if len(feedback) > 10000:
+                return {
+                    "status": "error",
+                    "message": "Feedback length cannot exceed 10000 characters!",
+                }, 400
+            DATABASE["FEEDBACK"].insert_one(
+                {
+                    "feedback": feedback,
+                    "user": session.get("user_id"),
+                    "user_name": session.get("user_name"),
+                    "user_profile_pic": session.get("profile_pic"),
+                    "created_at": datetime.now(),
+                }
+            )
+            return {
+                "status": "success",
+                "message": "Thank you for your feedback, we will get back to you soon!",
+            }, 200
+        return {
+            "status": "error",
+            "message": "Please make sure all the fields are filled correctly!",
+        }, 400
     return {
         "status": "error",
         "message": "You are not authorized to access this page!",

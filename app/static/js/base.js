@@ -1,7 +1,7 @@
 function createAlert(type, message) {
   let errorContainer = document.getElementById("error-container");
   let errorMessage = document.getElementById("error-message");
-    errorMessage.innerHTML = message;
+    errorMessage.innerHTML = message.replace(/-/g, ' ');
     errorContainer.classList.add(`${type}`);
     errorContainer.style.display = "flex";
 

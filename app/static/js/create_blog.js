@@ -41,9 +41,12 @@ newPostForm.addEventListener("submit", (e) => {
     .then((res) => res.json())
     .then((data) => {
       if (data.status == "success") {
-        window.location.href = "/blogs/" + data.blog_slug;
+        createAlert("success", data.message.replace(/\s/g , '-').trim());
+        setTimeout(() => {
+          window.location.href = "/blogs/" + data.blog_slug;
+        }, 1000);
       } else {
-        alert(data.message);
+        createAlert(data.message);
       }
     })
     .catch((err) => console.log(err));
