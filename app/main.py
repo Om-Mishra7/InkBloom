@@ -679,7 +679,6 @@ def profile_page():
                 "status": "error",
                 "message": "This page is under construction!",
             }, 401
-            }
         user = DATABASE["USERS"].find_one({"_id": session["user_id"]})
         return render_template("profile.html", user=user)
     return abort(401)
