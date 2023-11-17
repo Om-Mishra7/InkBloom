@@ -243,6 +243,7 @@ hr {
     top: 0px;
     min-height: 50px;
     display: none;
+    z-index: 100;
 }
 
 .error button {
