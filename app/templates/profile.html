@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    {% include 'partials/header.html' %}
+    <title>InkBloom | ProjectRexa</title>
+    <link rel="stylesheet" href="/static/css/profile.css" />
+    <script src="/static/js/profile.js" defer></script>
+  </head>
+  <body>
+    {% include 'partials/navbar.html' %}
+    <main>
+        <div class="basic-user-info">
+            <div class="user-avatar">
+                <img src="//wsrv.nl?url={{ user.profile_pic }}&maxage=31d&q=50&w=256&h=256output=webp" alt="User Avatar" />
+            </div>
+            <div class="user-info">
+                <h1>{{ user.name }}</h1>
+                <p>{{ user.github_id }}</p>
+                <p>{{ (user.created_at | string) | format_timestamp }}</p>
+                <p>Newsletter Subscription: {% if user.newsletter_enabled %}Active{% else %}Inactive{% endif %}</p>
+                          
+            </div>
+
+    </main>
+    {% include 'partials/footer.html' %}
+
+  </body>
+</html>

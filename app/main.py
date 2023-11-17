@@ -38,7 +38,6 @@ from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from flask_session import Session
 from pymongo import MongoClient
-from purgo_malum import client
 
 # Loading the environment variables
 
@@ -121,13 +120,14 @@ def check_crsf_token(token):
         return False
     return True
 
+
 def calculate_read_time(html_content, words_per_minute=200, image_time_seconds=12):
-    text_content = re.sub(r'<[^>]*>', '', html_content)  # Remove HTML tags
-    word_count = len(re.findall(r'\w+', text_content))
+    text_content = re.sub(r"<[^>]*>", "", html_content)  # Remove HTML tags
+    word_count = len(re.findall(r"\w+", text_content))
 
     text_read_time_minutes = word_count / words_per_minute
 
-    image_count = len(re.findall(r'<img [^>]*>', html_content))
+    image_count = len(re.findall(r"<img [^>]*>", html_content))
     image_read_time_seconds = image_count * image_time_seconds
 
     total_read_time_minutes = text_read_time_minutes + (image_read_time_seconds / 60)
@@ -475,7 +475,7 @@ def edit_blog(blog_id):
 
             if not blog_cover_image_url:
                 return {"status": "error", "message": "No cover image found!"}, 400
-         
+
         DATABASE["BLOGS"].update_one(
             {"_id": ObjectId(blog_id)},
             {
@@ -523,10 +523,17 @@ def authentication():
     if next_url:
         session["next"] = next_url
 
+    if os.getenv("GITHUB_CLIENT_ID") is None:
+        return {
+            "status": "error",
+            "message": "The server was unable to process your request! | Error Code - 00001",
+        }, 500
+
     github_auth_url = "https://github.com/login/oauth/authorize"
     github_auth_url += "?client_id=" + os.getenv("GITHUB_CLIENT_ID")
-    github_auth_url += (
-        "&redirect_uri=" + (os.getenv('LOCAL_GITHUB_REDIRECT_URL') or 'https://blog.projectrexa.dedyn.io/user/github/callback')
+    github_auth_url += "&redirect_uri=" + (
+        os.getenv("LOCAL_GITHUB_REDIRECT_URL")
+        or "https://blog.projectrexa.dedyn.io/user/github/callback"
     )
     github_auth_url += "&read:user"
 
@@ -569,25 +576,66 @@ def github_callback():
             DATABASE["USERS"].insert_one(
                 {
                     "_id": user_data["id"],
+                    "github_id": user_data["login"],
                     "name": user_data["name"] or "User",
                     "profile_pic": user_data["avatar_url"],
                     "admin": False,
                     "blocked": False,
+                    "newsletter_enabled": False,
+                    "preferred_theme": "noir nebula",
                     "created_at": datetime.now(),
+                    "last_updated_at": datetime.now(),
                 }
             )
-
             user = DATABASE["USERS"].find_one({"_id": user_data["id"]})
 
-        session["logged_in"] = True
-        session["user_id"] = user_data["id"]
-        session["user_name"] = user_data["name"]
-        session["profile_pic"] = user_data["avatar_url"]
+        else:
+            user_schema = {
+                "github_id": user_data["login"],
+                "name": user_data["name"] or "User",
+                "profile_pic": user_data["avatar_url"],
+                "admin": False,
+                "blocked": False,
+                "newsletter_enabled": False,
+                "preferred_theme": "noir nebula",
+                "created_at": datetime.now(),
+                "last_updated_at": datetime.now(),
+            }
+
+            for key, value in user_schema.items():
+                if user.get(key) is None:
+                    DATABASE["USERS"].update_one(
+                        {"_id": user_data["id"]},
+                        {"$set": {key: value}},
+                    )
+                else:
+                    continue
+
+            DATABASE["USERS"].update_one(
+                {"_id": user_data["id"]},
+                {
+                    "$set": {
+                        "github_id": user_data["login"],
+                        "name": user_data["name"] or "User",
+                        "profile_pic": user_data["avatar_url"],
+                        "last_updated_at": datetime.now(),
+                    }
+                },
+            )
+
         if user is not None:
+            session["logged_in"] = True
+            session["user_id"] = user.get("_id")
+            session["github_id"] = user.get("github_id")
+            session["user_name"] = user.get("name")
+            session["profile_pic"] = user.get("profile_pic")
+            session["newsletter_enabled"] = user.get("newsletter_enabled", False)
             session["admin"] = user.get("admin", False)
             session["blocked"] = user.get("blocked", False)
 
-        return redirect(session.get("next") or url_for("index"))
+            return redirect(session.get("next") or url_for("index"))
+
+        return redirect("/user/authorize" + "?error=Something went wrong!")
 
     except Exception as e:
         return redirect("/user/authorize" + "?error=Something went wrong!")
@@ -609,6 +657,7 @@ def search_page():
     """
     return render_template("search.html")
 
+
 @app.route("/user/feedback")
 def feedback_page():
     """
@@ -617,6 +666,30 @@ def feedback_page():
     if session.get("logged_in"):
         return render_template("feedback.html")
     return abort(401)
+
+
+@app.route("/user/profile")
+def profile_page():
+    """
+    This function renders the profile page of the application.
+    """
+    if session.get("logged_in"):
+        user = DATABASE["USERS"].find_one({"_id": session["user_id"]})
+        return render_template("profile.html", user=user)
+    return abort(401)
+
+
+@app.route("/user/<user_id>")
+def user_page(user_id):
+    """
+    This function renders the user page of the application.
+    """
+    user = DATABASE["USERS"].find_one({"_id": int(user_id)})
+    if user:
+        comments = DATABASE["COMMENTS"].find({"commented_by": int(user_id)})
+        return render_template("user.html", user=user, comments=comments)
+    abort(404)
+
 
 @app.route("/rss")
 def rss():
@@ -757,7 +830,6 @@ def get_blogs(last_blog_id):
 @app.route("/api/v1/user/comments", methods=["POST"])
 @limiter.limit("5/minute")
 def post_user_comments():
-
     if request.method == "POST" and session.get("logged_in"):
         data = request.get_json()
         comment = data.get("comment")
@@ -967,6 +1039,7 @@ def delete_blog(blog_id):
         "message": "You are not authorized to access this page!",
     }, 401
 
+
 @app.route("/api/v1/feedback", methods=["POST"])
 @limiter.limit("5/minute")
 def feedback():
@@ -1037,4 +1110,4 @@ def handle_errors(e):
 
 
 if __name__ == "__main__":
-    app.run(debug=False, port=80)
+    app.run(debug=True, port=80)
