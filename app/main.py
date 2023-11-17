@@ -674,6 +674,12 @@ def profile_page():
     This function renders the profile page of the application.
     """
     if session.get("logged_in"):
+        if not session.get("admin"):
+            return {
+                "status": "error",
+                "message": "This page is under construction!",
+            }, 401
+            }
         user = DATABASE["USERS"].find_one({"_id": session["user_id"]})
         return render_template("profile.html", user=user)
     return abort(401)
