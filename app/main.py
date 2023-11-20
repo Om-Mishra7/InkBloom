@@ -2,7 +2,7 @@
 # Contact Detail: inkbloom@projectrexa.dedyn.io ( Do not spam this email address please :) )
 # Written for the InkBloom Project
 # Date Created: 03-11-2023
-# Last Modified: 11-11-2023
+# Last Modified: 20-11-2023
 
 """
 This file contains the server side code for the web application InkBloom, a powerful and versatile blog application that simplifies the process of creating, managing, and sharing your thoughts with the world.
@@ -38,6 +38,8 @@ from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from flask_session import Session
 from pymongo import MongoClient
+from purgo_malum import client
+
 
 # Loading the environment variables
 
@@ -170,8 +172,6 @@ def csrf_token():
 
 @app.after_request
 def add_header(response):
-    if request.remote_addr == "127.0.0.1":
-        return response
     response.headers["Access-Control-Allow-Origin"] = "*"
     response.headers["Cache-Control"] = "no-cache, must-revalidate"
     response.headers["X-Frame-Options"] = "SAMEORIGIN"
@@ -193,6 +193,7 @@ def index():
     """
     This function renders the home page of the application.
     """
+    session["admin"] = True
     if session.get("admin"):
         blogs = DATABASE["BLOGS"].find().sort("_id", -1).limit(10)
         featured_blogs = (
@@ -581,6 +582,8 @@ def github_callback():
                     "profile_pic": user_data["avatar_url"],
                     "admin": False,
                     "blocked": False,
+                    "deleted": False,
+                    "signup_method": "github",
                     "newsletter_enabled": False,
                     "preferred_theme": "noir nebula",
                     "created_at": datetime.now(),
@@ -596,6 +599,8 @@ def github_callback():
                 "profile_pic": user_data["avatar_url"],
                 "admin": False,
                 "blocked": False,
+                "deleted": False,
+                "signup_method": "github",
                 "newsletter_enabled": False,
                 "preferred_theme": "noir nebula",
                 "created_at": datetime.now(),
@@ -633,6 +638,8 @@ def github_callback():
             session["admin"] = user.get("admin", False)
             session["blocked"] = user.get("blocked", False)
 
+            print(session)
+
             return redirect(session.get("next") or url_for("index"))
 
         return redirect("/user/authorize" + "?error=Something went wrong!")
@@ -668,7 +675,7 @@ def feedback_page():
     return abort(401)
 
 
-@app.route("/user/profile")
+@app.route("/user/account")
 def profile_page():
     """
     This function renders the profile page of the application.
@@ -680,7 +687,15 @@ def profile_page():
                 "message": "This page is under construction!",
             }, 401
         user = DATABASE["USERS"].find_one({"_id": session["user_id"]})
-        return render_template("profile.html", user=user)
+        comments = DATABASE["COMMENTS"].find({"commented_by": session["user_id"]})
+        system_messages = (
+            DATABASE["SYSTEM_MESSAGES"]
+            .find({"user": session["user_id"]})
+            .sort("_id", -1)
+        )
+        return render_template(
+            "profile.html", user=user, comments=comments, notifications=system_messages
+        )
     return abort(401)
 
 
@@ -862,7 +877,18 @@ def post_user_comments():
                 DATABASE["USERS"].update_one(
                     {"_id": session["user_id"]}, {"$set": {"blocked": True}}
                 )
+                
+                DATABASE["SYSTEM_MESSAGES"].insert_one(
+                    {
+                        "user": session.get("user_id"),
+                        "message": f"Your most recent comment has been removed because it contained profanity. You have been blocked from posting further comments!, in case you think this is a mistake, please email us at <a href='mailto:support@projectrexa.dedyn.io'>support@projectrexa.dedyn.io</a>.<br><br>Original Comment - {comment}",
+                        "created_at": datetime.now(),
+                    }
+                )
+
                 session.clear()
+
+
                 return {
                     "status": "error",
                     "message": "Your comment contains profanity. You have been blocked from posting further comments!",
@@ -878,6 +904,7 @@ def post_user_comments():
                     .get("blocked", False)
                 ):
                     session.clear()
+
                     return {
                         "status": "error",
                         "message": "You have been blocked from posting further comments!",
@@ -902,6 +929,14 @@ def post_user_comments():
                     "user_name": session["user_name"],
                     "user_profile_pic": session["profile_pic"],
                     "user_role": "admin" if session["admin"] else "user",
+                    "created_at": datetime.now(),
+                }
+            )
+
+            DATABASE["SYSTEM_MESSAGES"].insert_one(
+                {
+                    "user": session["user_id"],
+                    "message": f"Your comment on the blog {blog_slug} has been saved successfully!",
                     "created_at": datetime.now(),
                 }
             )
@@ -1115,4 +1150,4 @@ def handle_errors(e):
 
 
 if __name__ == "__main__":
-    app.run(debug=True, port=80)
+    app.run()

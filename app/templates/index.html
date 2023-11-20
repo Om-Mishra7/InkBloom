@@ -86,10 +86,15 @@
             </div>
           </div>
           <div class="blog-image">
+            <a
+                class="blog-link"
+                href="/blogs/{{blog.slug}}"
+              >
             <img
               src="//wsrv.nl?url={{blog.cover_image}}&maxage=31d&q=50&w=300&h=300output=webp"
               alt="{{blog.title}}'s Cover Image"
             />
+            </a>
           </div>
         </div>
         {% endfor %}

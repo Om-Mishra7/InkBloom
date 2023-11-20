@@ -9,20 +9,124 @@
   <body>
     {% include 'partials/navbar.html' %}
     <main>
-        <div class="basic-user-info">
-            <div class="user-avatar">
-                <img src="//wsrv.nl?url={{ user.profile_pic }}&maxage=31d&q=50&w=256&h=256output=webp" alt="User Avatar" />
-            </div>
-            <div class="user-info">
-                <h1>{{ user.name }}</h1>
-                <p>{{ user.github_id }}</p>
-                <p>{{ (user.created_at | string) | format_timestamp }}</p>
-                <p>Newsletter Subscription: {% if user.newsletter_enabled %}Active{% else %}Inactive{% endif %}</p>
-                          
-            </div>
+      <h1>Account </h1>
+      <p class="notice heading">
+        Your account details are provided by the signup method you use, In order
+        to change your account details, you need to change them on the signup
+        method you used.
+      </p>
+      <h2>User Profile</h2>
+      <div class="basic-user-info">
+        <div class="user-avatar">
+          <img
+            src="//wsrv.nl?url={{ user.profile_pic }}&maxage=31d&q=50&w=256&h=256output=webp"
+            alt="User Avatar"
+          />
+        </div>
+        <div class="user-info">
+          <p>User Name - {{ user.name | title}}</p>
+          <p>OAuth Provider - {{ user.signup_method | title }}</p>
+        </div>
+      </div>
+      <hr>
+      <h2>Newsletter Settings</h2>
+      <div class="newsletter-settings">
+        {% if user.newsletter_enabled %}
+        <p>
+          You are currently subscribed to the newsletter. You can unsubscribe
+          from the newsletter by clicking the button below.
+        </p>
+        <form action="/api/v1/user/newsletter" method="POST" class="unsubscribe-form">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
+          <input type="hidden" name="newsletter_enabled" value="false" />
+          <button type="submit" class="unsubscribe-button">
+            Unsubscribe
+          </button>
+        </form>
+        {% else %}
+        <p>
+          You are currently not subscribed to the newsletter, to receive monthly updates about the newest blogs and features, subscribe to the newsletter by clicking the button below.
+        </p>
+        <p class="notice">We ensure that your email will not be shared with any third parties and will only be used for the newsletter.</p>
+        <form action="/api/v1/user/newsletter" method="POST" class="subscribe-form">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
+          <input type="hidden" name="newsletter_enabled" value="true" />
+          <input type="email" name="email" placeholder="Enter your email address" required />
+          <button type="submit" class="subscribe-button">
+            Subscribe
+          </button>
+        </form>
+        {% endif %}
 
+      </div>
+      <hr>
+      <h2>System Notifications</h2>
+      <div class="system-notifications">
+        <p>
+          System notifications are important notifications about your account and the website, and are sent out when there is a change in the website or your account.
+        </p>
+        <div class="notifications">
+          {% for notification in notifications %}
+          <div class="notification">
+            <p>{{ notification.message | safe}}</p>
+            <p>Date - {{ (notification.created_at | string) | format_timestamp }}</p>
+            <p>By - Moderation Bot</p>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+      <hr>
+      <h2>User Comments</h2>
+      <div class="user-comments">
+        <p>
+          The comments you have made on the website are shown below, you can delete them by clicking the delete button below the comment.
+        </p>
+        
+        <div class="comments">
+          {% for comment in comments %}
+          <div class="comment">
+            <p>{{comment.comment}}</p>
+            <a href="/blogs/{{ comment.blog_slug }}" class="blog-link"><svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 -960 960 960" width="24"><path d="M200-120q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h280v80H200v560h560v-280h80v280q0 33-23.5 56.5T760-120H200Zm188-212-56-56 372-372H560v-80h280v280h-80v-144L388-332Z"/></svg>View Blog</a>
+            <form action="/api/v1/comments/{{ comment._id }}" method="POST">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
+              <input type="hidden" name="_method" value="DELETE" />
+              <button type="submit" class="delete-button" aria-label="Delete Comment" title="Delete Comment" data-id="{{ comment._id }}">
+                Delete
+              </button>
+            </form>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+      <hr>
+      <h2>Export Data</h2>
+      <div class="export-data">
+        <p>
+          You can export your data from the website by clicking the button below, this will export all your data from the website and make it available for download in a zip file.
+        </p>
+        <form action="/api/v1/user/export" method="POST">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
+          <button type="submit" class="export-button">
+            Export
+          </button>
+        </form>
+      </div>
+      <hr>
+      <h2 class="delete">Delete Account</h2>
+      <div class="delete-account">
+        <p>
+          This will delete your account and all the data associated with it except for the comments you have made on the website, you can delete them by clicking the delete button below the comment.
+
+          This action is irreversible and cannot be undone, if you want to delete your account, click the button below.
+        </p>
+        <form action="/api/v1/user" method="POST">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
+          <input type="hidden" name="_method" value="DELETE" />
+          <button type="submit" class="delete-button">
+            Delete Account
+          </button> 
+        </form>
     </main>
     {% include 'partials/footer.html' %}
-
   </body>
 </html>

@@ -112,7 +112,7 @@
                   </p>
                 </div>
               </div>
-              <p class="blog-comment-content">{{ comment.comment | capitalize }}</p>
+              <p class="blog-comment-content">{{ comment.comment}}</p>
               {% if session['admin'] %}
               <div class="blog-comment-actions">
                 <button class="delete-comment" onclick="deleteComment('{{ comment._id }}')" data-comment-id = "{{ comment._id }}">Delete</button>
