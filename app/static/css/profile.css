@@ -87,7 +87,12 @@ form {
     gap: 10px;
 }
 
-input {
+.comment form input,
+.delete-account form input,
+.newsletter-settings form input,
+.notice form input,
+.export-data form input,
+.delete-account form input {
     width: 30%;
     height: 40px;
     min-width: 300px;
@@ -115,11 +120,13 @@ button {
     cursor: pointer;
 }
 
-.user-comments p, .system-notifications p {
+.user-comments p,
+.system-notifications p {
     margin-bottom: 20px;
 }
 
-.comment, .notification {
+.comment,
+.notification {
     display: flex !important;
     flex-direction: column !important;
     gap: 10px;
@@ -129,7 +136,8 @@ button {
     background-color: #2c2c2c !important;
 }
 
-.comment p, .notification p {
+.comment p,
+.notification p {
     margin: 0 !important;
     font-size: 0.9rem !important;
 }
@@ -139,7 +147,8 @@ button {
 }
 
 
-.comments, .notifications {
+.comments,
+.notifications {
     display: flex;
     flex-direction: column;
     gap: 20px;
@@ -167,7 +176,7 @@ button {
     color: #d8d4cf;
     text-decoration: none;
     font-size: 0.9rem;
-    width: max-content ;
+    width: max-content;
     display: flex;
     flex-direction: row;
     align-items: center;
