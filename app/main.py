@@ -33,6 +33,7 @@ from flask import (
     session,
     abort,
     jsonify,
+    Response
 )
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
@@ -1195,48 +1196,26 @@ def export_user_data(user_id):
                 comments = DATABASE["COMMENTS"].find({"commented_by": int(user_id)})
                 feedback = DATABASE["FEEDBACK"].find({"user": int(user_id)})
                 system_messages = DATABASE["SYSTEM_MESSAGES"].find({"user": int(user_id)})
-                os.makedirs("/exports", exist_ok=True)
-                with open(f"/exports/{user_id}.txt", "w") as f:
-                    f.write(f"InkBloom | ProjectRexa\n\n")
-                    
-                    f.write(f"This file contains the data associated with the user ID - {user_id} and is generated on {datetime.now()} due to a request made by the user.\n\n")
-                    f.write(f"This file contains sensitive information about the user. Please do not share this file with anyone!\n\n\n")
 
-                    f.write(f"User Data\n\n")
-                    f.write(f"User ID - {user_id}\n")
-                    f.write(f"User Name - {user.get('name')}\n")
-                    f.write(f"User Profile Picture - {user.get('profile_pic')}\n")
-                    f.write(f"User Signup Method - {user.get('signup_method')}\n")
-                    f.write(f"User Signup Date - {user.get('created_at')}\n")
-                    f.write(f"User Last Updated - {user.get('last_updated_at')}\n\n")
+                # Without saving to a file
+                content = f"This is an export of your data from InkBloom | ProjectRexa Blog.\nThis file contains sensitive information, please do not share this file with anyone.\n\nUser ID - {user['_id']}\nUser Name - {user['name']}\nUser Profile Picture - {user['profile_pic']}\nUser Signup Method - {user['signup_method']}\nUser Signup Date - {user['created_at']}\nUser Last Updated Date - {user['last_updated_at']}\n\nComments - \n\n"
 
-                    f.write(f"\n\nComments\n\n")
-                    for comment in comments:
-                        f.write(f"Comment ID - {comment.get('_id')}\n")
-                        f.write(f"Comment - {comment.get('comment')}\n")
-                        f.write(f"Commented On - {comment.get('created_at')}\n")
-                        f.write(f"Assosiated Blog - {comment.get('blog_slug')}\n")
-                        f.write(f"Commented By - {comment.get('user_name')}\n")
-                        f.write(f"Commented By Profile Picture - {comment.get('user_profile_pic')}\n\n")
+                for comment in comments:
+                    content += f"Comment ID - {comment['_id']}\nCommented On - {comment['created_at']}\nComment - {comment['comment']}\n\n"
 
-                    f.write(f"\n\nFeedback\n\n")
-                    for feedback in feedback:
-                        f.write(f"Feedback ID - {feedback.get('_id')}\n")
-                        f.write(f"Feedback - {feedback.get('feedback')}\n")
-                        f.write(f"Feedback Date - {feedback.get('created_at')}\n")
-                        f.write(f"Feedback By - {feedback.get('user_name')}\n\n")
+                content += "\n\nFeedback - \n\n"
 
-                    f.write(f"\n\nSystem Messages\n\n")
-                    for message in system_messages:
-                        f.write(f"Message ID - {message.get('_id')}\n")
-                        f.write(f"Message - {message.get('message')}\n")
-                        f.write(f"Message Date - {message.get('created_at')}\n\n")
+                for feedback in feedback:
+                    content += f"Feedback ID - {feedback['_id']}\nFeedback Date - {feedback['created_at']}\nFeedback - {feedback['feedback']}\n\n"
 
-                    f.write(f"\n\nEnd of File\n\n")
+                content += "\n\nSystem Messages - \n\n"
 
+                for message in system_messages:
+                    content += f"Message ID - {message['_id']}\nMessage Date - {message['created_at']}\nMessage - {message['message']}\n\n"
+
+                return Response(content, mimetype="text/plain", headers={"Content-Disposition": f"attachment;filename={user['name']}.txt"})
+            
                 
-
-                return send_from_directory("/exports", f"{user_id}.txt", as_attachment=True)
 
             return {"status": "error", "message": "Unable to find user associated with the given ID!"}, 400
     else:
