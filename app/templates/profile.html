@@ -9,6 +9,7 @@
   <body>
     {% include 'partials/navbar.html' %}
     <main>
+      <p hidden name="csrf_token" value="{{ csrf_token }} id="csrf_token"></p>
       <h1>Account </h1>
       <p class="notice heading">
         Your account details are provided by the signup method you use, In order

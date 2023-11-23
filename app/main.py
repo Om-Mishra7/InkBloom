@@ -33,7 +33,7 @@ from flask import (
     session,
     abort,
     jsonify,
-    Response
+    Response,
 )
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
@@ -634,6 +634,11 @@ def github_callback():
             )
 
         if user is not None:
+            if user.get("deleted", True):
+                return redirect(
+                    "/user/authorize"
+                    + "?error=This account assosiated with this GitHub account has been deleted!"
+                )
             session["logged_in"] = True
             session["user_id"] = user.get("_id")
             session["github_id"] = user.get("github_id")
@@ -642,8 +647,6 @@ def github_callback():
             session["newsletter_enabled"] = user.get("newsletter_enabled", False)
             session["admin"] = user.get("admin", False)
             session["blocked"] = user.get("blocked", False)
-
-            print(session)
 
             return redirect(session.get("next") or url_for("index"))
 
@@ -882,7 +885,7 @@ def post_user_comments():
                 DATABASE["USERS"].update_one(
                     {"_id": session["user_id"]}, {"$set": {"blocked": True}}
                 )
-                
+
                 DATABASE["SYSTEM_MESSAGES"].insert_one(
                     {
                         "user": session.get("user_id"),
@@ -892,7 +895,6 @@ def post_user_comments():
                 )
 
                 session.clear()
-
 
                 return {
                     "status": "error",
@@ -1139,6 +1141,12 @@ def feedback():
 @app.route("/api/v1/users/<user_id>/unsubscribe", methods=["PUT"])
 def unsubscribe(user_id):
     if request.method == "PUT":
+        if json.loads(request.data).get("csrf_token"):
+            if not check_crsf_token(json.loads(request.data).get("csrf_token")):
+                return {
+                    "status": "error",
+                    "message": "The request was discarded because it did not contain a valid CSRF token!",
+                }, 400
         user = DATABASE["USERS"].find_one({"_id": int(user_id)})
         if user:
             DATABASE["USERS"].update_one(
@@ -1165,6 +1173,19 @@ def unsubscribe(user_id):
 @app.route("/api/v1/users/<user_id>/subscribe", methods=["PUT"])
 def subscribe(user_id):
     if request.method == "PUT":
+        if json.loads(request.data).get("csrf_token"):
+            if not check_crsf_token(json.loads(request.data).get("csrf_token")):
+                return {
+                    "status": "error",
+                    "message": "The request was discarded because it did not contain a valid CSRF token!",
+                }, 400
+        if json.loads(request.data).get("csrf_token"):
+            if not check_crsf_token(json.loads(request.data).get("csrf_token")):
+                return {
+                    "status": "error",
+                    "message": "The request was discarded because it did not contain a valid CSRF token!",
+                }, 400
+
         user = DATABASE["USERS"].find_one({"_id": int(user_id)})
         if user:
             DATABASE["USERS"].update_one(
@@ -1190,36 +1211,108 @@ def subscribe(user_id):
 
 @app.route("/api/v1/users/<user_id>/export", methods=["GET"])
 def export_user_data(user_id):
-    if session.get("logged_in") and (session.get("admin") or session.get("user_id") == int(user_id)):
-            user = DATABASE["USERS"].find_one({"_id": int(user_id)})
-            if user:
-                comments = DATABASE["COMMENTS"].find({"commented_by": int(user_id)})
-                feedback = DATABASE["FEEDBACK"].find({"user": int(user_id)})
-                system_messages = DATABASE["SYSTEM_MESSAGES"].find({"user": int(user_id)})
+    if session.get("logged_in") and session.get("user_id") == int(user_id):
+        if json.loads(request.data).get("csrf_token"):
+            if not check_crsf_token(json.loads(request.data).get("csrf_token")):
+                return {
+                    "status": "error",
+                    "message": "The request was discarded because it did not contain a valid CSRF token!",
+                }, 400
+        user = DATABASE["USERS"].find_one({"_id": int(user_id)})
+        if user:
+            comments = DATABASE["COMMENTS"].find({"commented_by": int(user_id)})
+            feedback = DATABASE["FEEDBACK"].find({"user": int(user_id)})
+            system_messages = DATABASE["SYSTEM_MESSAGES"].find({"user": int(user_id)})
 
-                # Without saving to a file
-                content = f"This is an export of your data from InkBloom | ProjectRexa Blog.\nThis file contains sensitive information, please do not share this file with anyone.\n\nUser ID - {user['_id']}\nUser Name - {user['name']}\nUser Profile Picture - {user['profile_pic']}\nUser Signup Method - {user['signup_method']}\nUser Signup Date - {user['created_at']}\nUser Last Updated Date - {user['last_updated_at']}\n\nComments - \n\n"
+            # Without saving to a file
+            content = f"This is an export of your data from InkBloom | ProjectRexa Blog.\nThis file contains sensitive information, please do not share this file with anyone.\n\nUser ID - {user['_id']}\nUser Name - {user['name']}\nUser Profile Picture - {user['profile_pic']}\nUser Signup Method - {user['signup_method']}\nUser Signup Date - {user['created_at']}\nUser Last Updated Date - {user['last_updated_at']}\n\nComments - \n\n"
 
-                for comment in comments:
-                    content += f"Comment ID - {comment['_id']}\nCommented On - {comment['created_at']}\nComment - {comment['comment']}\n\n"
+            for comment in comments:
+                content += f"Comment ID - {comment['_id']}\nCommented On - {comment['created_at']}\nComment - {comment['comment']}\n\n"
 
-                content += "\n\nFeedback - \n\n"
+            content += "\n\nFeedback - \n\n"
 
-                for feedback in feedback:
-                    content += f"Feedback ID - {feedback['_id']}\nFeedback Date - {feedback['created_at']}\nFeedback - {feedback['feedback']}\n\n"
+            for feedback in feedback:
+                content += f"Feedback ID - {feedback['_id']}\nFeedback Date - {feedback['created_at']}\nFeedback - {feedback['feedback']}\n\n"
 
-                content += "\n\nSystem Messages - \n\n"
+            content += "\n\nSystem Messages - \n\n"
 
-                for message in system_messages:
-                    content += f"Message ID - {message['_id']}\nMessage Date - {message['created_at']}\nMessage - {message['message']}\n\n"
+            for message in system_messages:
+                content += f"Message ID - {message['_id']}\nMessage Date - {message['created_at']}\nMessage - {message['message']}\n\n"
 
-                return Response(content, mimetype="text/plain", headers={"Content-Disposition": f"attachment;filename={user['name']}.txt"})
-            
-                
+            return Response(
+                content,
+                mimetype="text/plain",
+                headers={
+                    "Content-Disposition": f"attachment;filename={user['name']}.txt"
+                },
+            )
 
-            return {"status": "error", "message": "Unable to find user associated with the given ID!"}, 400
+        return {
+            "status": "error",
+            "message": "Unable to find user associated with the given ID!",
+        }, 400
     else:
-        return {"status": "error", "message": "You are not authorized to access this page!"}, 401
+        return {
+            "status": "error",
+            "message": "You are not authorized to access this page!",
+        }, 401
+
+
+@app.route("/api/v1/users/<user_id>/delete", methods=["DELETE"])
+def delete_user(user_id):
+    if session.get("logged_in") and session.get("user_id") == int(user_id):
+        if json.loads(request.data).get("csrf_token"):
+            if not check_crsf_token(json.loads(request.data).get("csrf_token")):
+                return {
+                    "status": "error",
+                    "message": "The request was discarded because it did not contain a valid CSRF token!",
+                }, 400
+        user = DATABASE["USERS"].find_one({"_id": int(user_id)})
+        if user:
+            if user.get("admin", False):
+                return {
+                    "status": "error",
+                    "message": "Privilege level is not sufficient to perform this action!",
+                }, 400
+
+            DATABASE["USERS"].update_one(
+                {"_id": int(user_id)}, {"$set": {"deleted": True}}
+            )
+            DATABASE["COMMENTS"].update_many(
+                {"commented_by": int(user_id)},
+                {
+                    "$set": {
+                        "commented_by": "Deleted User",
+                        "user_name": "Deleted User",
+                        "user_profile_pic": "https://wsrv.nl?url=https://cdn.projectrexa.dedyn.io/projectrexa/blog/assets/22126c4fc3e19bd066f7ff56d5b1fd93&maxage=31d&h=24&w=24q=100&output=webp",
+                    }
+                },
+            )
+            DATABASE["SYSTEM_MESSAGES"].insert_one(
+                {
+                    "user": int(user_id),
+                    "message": "The request to delete your account has been processed successfully!",
+                    "created_at": datetime.now(),
+                }
+            )
+
+            session.clear()
+
+            return {
+                "status": "success",
+                "message": "Your account has been deleted successfully!",
+            }, 200
+        return {
+            "status": "error",
+            "message": "Unable to find user associated with the given ID!",
+        }, 400
+    else:
+        return {
+            "status": "error",
+            "message": "You are not authorized to access this page!",
+        }, 401
+
 
 # Error Handlers
 
@@ -1245,4 +1338,4 @@ def handle_errors(e):
 
 
 if __name__ == "__main__":
-    app.run(port=80, debug=True)
+    app.run()

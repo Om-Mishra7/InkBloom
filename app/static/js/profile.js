@@ -19,6 +19,7 @@ function deleteComment() {
     headers: {
       "Content-Type": "application/json",
     },
+    body: JSON.stringify({ crsf_token: document.getElementById("csrf_token") }),
   })
     .then((response) => response.json())
     .then((data) => {
@@ -45,6 +46,7 @@ if (unsubscribeButton) {
       headers: {
         "Content-Type": "application/json",
       },
+      body: JSON.stringify({ crsf_token: document.getElementById("csrf_token") }),
     })
       .then((response) => response.json())
       .then((data) => {
@@ -67,6 +69,7 @@ if (subscribeButton) {
       headers: {
         "Content-Type": "application/json",
       },
+      body: JSON.stringify({ crsf_token: document.getElementById("csrf_token") }),
     })
       .then((response) => response.json())
       .then((data) => {
@@ -96,6 +99,7 @@ deleteAccountButton.addEventListener("click", () => {
     headers: {
       "Content-Type": "application/json",
     },
+    body: JSON.stringify({ crsf_token: document.getElementById("csrf_token") }),
   })
     .then((response) => response.json())
     .then((data) => {
