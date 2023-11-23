@@ -689,11 +689,6 @@ def profile_page():
     This function renders the profile page of the application.
     """
     if session.get("logged_in"):
-        if not session.get("admin"):
-            return {
-                "status": "error",
-                "message": "This page is under construction!",
-            }, 401
         user = DATABASE["USERS"].find_one({"_id": session["user_id"]})
         comments = DATABASE["COMMENTS"].find({"commented_by": session["user_id"]})
         system_messages = (
@@ -1191,6 +1186,10 @@ def subscribe(user_id):
             DATABASE["USERS"].update_one(
                 {"_id": int(user_id)}, {"$set": {"newsletter_enabled": True}}
             )
+            DATABASE["USERS"].update_one(
+                {"_id": int(user_id)}, {"$set": {"email": json.loads(request.data).get("email")}}
+            )
+
             DATABASE["SYSTEM_MESSAGES"].insert_one(
                 {
                     "user": int(user_id),
@@ -1270,12 +1269,11 @@ def delete_user(user_id):
                 }, 400
         user = DATABASE["USERS"].find_one({"_id": int(user_id)})
         if user:
-            if user.get("admin", False):
+            if session.get("user_id") != int(user_id):
                 return {
                     "status": "error",
-                    "message": "Privilege level is not sufficient to perform this action!",
-                }, 400
-
+                    "message": "You don't have the permission to delete this account!",
+                }, 401
             DATABASE["USERS"].update_one(
                 {"_id": int(user_id)}, {"$set": {"deleted": True}}
             )
@@ -1285,7 +1283,7 @@ def delete_user(user_id):
                     "$set": {
                         "commented_by": "Deleted User",
                         "user_name": "Deleted User",
-                        "user_profile_pic": "https://wsrv.nl?url=https://cdn.projectrexa.dedyn.io/projectrexa/blog/assets/22126c4fc3e19bd066f7ff56d5b1fd93&maxage=31d&h=24&w=24q=100&output=webp",
+                        "user_profile_pic": "https://cdn.projectrexa.dedyn.io/projectrexa/blog/assets/3dbae37313bec7eac6117c9ddb8e2578",
                     }
                 },
             )
@@ -1338,4 +1336,4 @@ def handle_errors(e):
 
 
 if __name__ == "__main__":
-    app.run()
+    app.run(port=80, debug=True)

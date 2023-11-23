@@ -66,6 +66,19 @@
       id="profile-pic"
     />
     <div class="profile-dropdown" id="profile-dropdown">
+      <a class="dropdown-link" href="/">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          height="24"
+          viewBox="0 -960 960 960"
+          width="24"
+        >
+          <path
+            d="M240-200h120v-240h240v240h120v-360L480-740 240-560v360Zm-80 80v-480l320-240 320 240v480H520v-240h-80v240H160Zm320-350Z"
+          />
+        </svg>
+        Home
+      </a>
       <a class="dropdown-link" href="/user/account"
         ><svg
           xmlns="http://www.w3.org/2000/svg"
@@ -118,7 +131,9 @@
         >Feedback</a
       >
       <hr />
-      <a class="dropdown-link sign-out" href="/user/sign-out?next={{ url_for(request.endpoint, **request.view_args) }}"
+      <a
+        class="dropdown-link sign-out"
+        href="/user/sign-out?next={{ url_for(request.endpoint, **request.view_args) }}"
         ><svg
           xmlns="http://www.w3.org/2000/svg"
           height="24"
@@ -133,7 +148,12 @@
     </div>
 
     {% else %}
-    <a class="nav-link search-icon" href="/search" id="search-icon" aria-label="Search" title="Search" 
+    <a
+      class="nav-link search-icon"
+      href="/search"
+      id="search-icon"
+      aria-label="Search"
+      title="Search"
       ><svg
         xmlns="http://www.w3.org/2000/svg"
         width="16"
@@ -146,7 +166,11 @@
           d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z"
         /></svg
     ></a>
-    <a class="nav-link sign-up" href="/user/authorize?next={{ url_for(request.endpoint, **request.view_args) }}">Authenticate</a>
+    <a
+      class="nav-link sign-up"
+      href="/user/authorize?next={{ url_for(request.endpoint, **request.view_args) }}"
+      >Authenticate</a
+    >
     {% endif %}
   </div>
 </nav>

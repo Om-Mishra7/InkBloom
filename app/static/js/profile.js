@@ -69,7 +69,7 @@ if (subscribeButton) {
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ crsf_token: document.getElementById("csrf_token") }),
+      body: JSON.stringify({ crsf_token: document.getElementById("csrf_token"), email: document.getElementById("email").value }),
     })
       .then((response) => response.json())
       .then((data) => {
@@ -94,7 +94,7 @@ deleteAccountButton.addEventListener("click", () => {
   confirm(
     "Are you sure you want to delete your account, this action cannot be undone?"
   );
-  fetch(`/api/users/${userID}`, {
+  fetch(`/api/v1/users/${userID}/delete`, {
     method: "DELETE",
     headers: {
       "Content-Type": "application/json",
