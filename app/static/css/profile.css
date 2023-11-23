@@ -146,6 +146,11 @@ button {
     background-color: #bb2124;
 }
 
+.unsubscribe-button {
+    width: max-content;
+    padding: 10px 20px;
+    margin-top: 10px;
+}
 
 .comments,
 .notifications {

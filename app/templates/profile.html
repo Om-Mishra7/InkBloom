@@ -26,6 +26,7 @@
         <div class="user-info">
           <p>User Name - {{ user.name | title}}</p>
           <p>OAuth Provider - {{ user.signup_method | title }}</p>
+          <p hidden id="user-id" data-user-id="{{ user._id }}"></p>
         </div>
       </div>
       <hr>
@@ -36,10 +37,10 @@
           You are currently subscribed to the newsletter. You can unsubscribe
           from the newsletter by clicking the button below.
         </p>
-        <form action="/api/v1/user/newsletter" method="POST" class="unsubscribe-form">
+        <form method="PUT" class="unsubscribe-form">
           <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
           <input type="hidden" name="newsletter_enabled" value="false" />
-          <button type="submit" class="unsubscribe-button">
+          <button type="submit" class="unsubscribe-button" id="unsubscribe-button">
             Unsubscribe
           </button>
         </form>
@@ -48,11 +49,11 @@
           You are currently not subscribed to the newsletter, to receive monthly updates about the newest blogs and features, subscribe to the newsletter by clicking the button below.
         </p>
         <p class="notice">We ensure that your email will not be shared with any third parties and will only be used for the newsletter.</p>
-        <form action="/api/v1/user/newsletter" method="POST" class="subscribe-form">
+        <form method="PUT" class="subscribe-form">
           <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
           <input type="hidden" name="newsletter_enabled" value="true" />
           <input type="email" name="email" placeholder="Enter your email address" required />
-          <button type="submit" class="subscribe-button">
+          <button type="submit" class="subscribe-button" id="subscribe-button">
             Subscribe
           </button>
         </form>
@@ -87,10 +88,10 @@
           <div class="comment">
             <p>{{comment.comment}}</p>
             <a href="/blogs/{{ comment.blog_slug }}" class="blog-link"><svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 -960 960 960" width="24"><path d="M200-120q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h280v80H200v560h560v-280h80v280q0 33-23.5 56.5T760-120H200Zm188-212-56-56 372-372H560v-80h280v280h-80v-144L388-332Z"/></svg>View Blog</a>
-            <form action="/api/v1/comments/{{ comment._id }}" method="POST">
+            <form method="DELETE">
               <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
               <input type="hidden" name="_method" value="DELETE" />
-              <button type="submit" class="delete-button" aria-label="Delete Comment" title="Delete Comment" data-id="{{ comment._id }}">
+              <button type="submit" class="delete-button" aria-label="Delete Comment" title="Delete Comment" data-comment-id="{{ comment._id }}">
                 Delete
               </button>
             </form>
@@ -106,7 +107,7 @@
         </p>
         <form action="/api/v1/user/export" method="POST">
           <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
-          <button type="submit" class="export-button">
+          <button type="submit" class="export-button" id="export-button">
             Export
           </button>
         </form>
@@ -122,7 +123,7 @@
         <form action="/api/v1/user" method="POST">
           <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
           <input type="hidden" name="_method" value="DELETE" />
-          <button type="submit" class="delete-button">
+          <button type="submit" class="delete-button" id="delete-account-button">
             Delete Account
           </button> 
         </form>

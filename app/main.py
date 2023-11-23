@@ -39,6 +39,10 @@ from flask_limiter.util import get_remote_address
 from flask_session import Session
 from pymongo import MongoClient
 from purgo_malum import client
+import json
+from bson import json_util
+import json
+from datetime import datetime
 
 
 # Loading the environment variables
@@ -936,7 +940,7 @@ def post_user_comments():
             DATABASE["SYSTEM_MESSAGES"].insert_one(
                 {
                     "user": session["user_id"],
-                    "message": f"Your comment on the blog {blog_slug} has been saved successfully!",
+                    "message": f"Your comment on the blog https://blog.projectrexa.dedyn.io/blogs/{blog_slug} has been saved successfully!",
                     "created_at": datetime.now(),
                 }
             )
@@ -956,9 +960,14 @@ def post_user_comments():
 
 @app.route("/api/v1/user/comments/<comment_id>", methods=["DELETE"])
 def delete_user_comments(comment_id):
-    if request.method == "DELETE" and session.get("logged_in") and session.get("admin"):
+    if request.method == "DELETE" and session.get("logged_in"):
         comment = DATABASE["COMMENTS"].find_one({"_id": ObjectId(comment_id)})
         if comment:
+            if comment["commented_by"] != session["user_id"] and not session["admin"]:
+                return {
+                    "status": "error",
+                    "message": "You are not authorized to access this page!",
+                }, 401
             DATABASE["COMMENTS"].delete_one({"_id": ObjectId(comment_id)})
             DATABASE["BLOGS"].update_one(
                 {"slug": comment["blog_slug"]},
@@ -1126,6 +1135,113 @@ def feedback():
     }, 401
 
 
+@app.route("/api/v1/users/<user_id>/unsubscribe", methods=["PUT"])
+def unsubscribe(user_id):
+    if request.method == "PUT":
+        user = DATABASE["USERS"].find_one({"_id": int(user_id)})
+        if user:
+            DATABASE["USERS"].update_one(
+                {"_id": int(user_id)}, {"$set": {"newsletter_enabled": False}}
+            )
+            DATABASE["SYSTEM_MESSAGES"].insert_one(
+                {
+                    "user": int(user_id),
+                    "message": "You have been unsubscribed from the newsletter!",
+                    "created_at": datetime.now(),
+                }
+            )
+            return {
+                "status": "success",
+                "message": "Your subscription to the newsletter has been deactivated!",
+            }, 200
+        return {"status": "error", "message": "Invalid user ID!"}, 400
+    return {
+        "status": "error",
+        "message": "You are not authorized to access this page!",
+    }, 401
+
+
+@app.route("/api/v1/users/<user_id>/subscribe", methods=["PUT"])
+def subscribe(user_id):
+    if request.method == "PUT":
+        user = DATABASE["USERS"].find_one({"_id": int(user_id)})
+        if user:
+            DATABASE["USERS"].update_one(
+                {"_id": int(user_id)}, {"$set": {"newsletter_enabled": True}}
+            )
+            DATABASE["SYSTEM_MESSAGES"].insert_one(
+                {
+                    "user": int(user_id),
+                    "message": "Your subscription to the newsletter has been activated!",
+                    "created_at": datetime.now(),
+                }
+            )
+            return {
+                "status": "success",
+                "message": "You have been subscribed to the newsletter!",
+            }, 200
+        return {"status": "error", "message": "Invalid user ID!"}, 400
+    return {
+        "status": "error",
+        "message": "You are not authorized to access this page!",
+    }, 401
+
+
+@app.route("/api/v1/users/<user_id>/export", methods=["GET"])
+def export_user_data(user_id):
+    if session.get("logged_in") and (session.get("admin") or session.get("user_id") == int(user_id)):
+            user = DATABASE["USERS"].find_one({"_id": int(user_id)})
+            if user:
+                comments = DATABASE["COMMENTS"].find({"commented_by": int(user_id)})
+                feedback = DATABASE["FEEDBACK"].find({"user": int(user_id)})
+                system_messages = DATABASE["SYSTEM_MESSAGES"].find({"user": int(user_id)})
+                os.makedirs("/exports", exist_ok=True)
+                with open(f"/exports/{user_id}.txt", "w") as f:
+                    f.write(f"InkBloom | ProjectRexa\n\n")
+                    
+                    f.write(f"This file contains the data associated with the user ID - {user_id} and is generated on {datetime.now()} due to a request made by the user.\n\n")
+                    f.write(f"This file contains sensitive information about the user. Please do not share this file with anyone!\n\n\n")
+
+                    f.write(f"User Data\n\n")
+                    f.write(f"User ID - {user_id}\n")
+                    f.write(f"User Name - {user.get('name')}\n")
+                    f.write(f"User Profile Picture - {user.get('profile_pic')}\n")
+                    f.write(f"User Signup Method - {user.get('signup_method')}\n")
+                    f.write(f"User Signup Date - {user.get('created_at')}\n")
+                    f.write(f"User Last Updated - {user.get('last_updated_at')}\n\n")
+
+                    f.write(f"\n\nComments\n\n")
+                    for comment in comments:
+                        f.write(f"Comment ID - {comment.get('_id')}\n")
+                        f.write(f"Comment - {comment.get('comment')}\n")
+                        f.write(f"Commented On - {comment.get('created_at')}\n")
+                        f.write(f"Assosiated Blog - {comment.get('blog_slug')}\n")
+                        f.write(f"Commented By - {comment.get('user_name')}\n")
+                        f.write(f"Commented By Profile Picture - {comment.get('user_profile_pic')}\n\n")
+
+                    f.write(f"\n\nFeedback\n\n")
+                    for feedback in feedback:
+                        f.write(f"Feedback ID - {feedback.get('_id')}\n")
+                        f.write(f"Feedback - {feedback.get('feedback')}\n")
+                        f.write(f"Feedback Date - {feedback.get('created_at')}\n")
+                        f.write(f"Feedback By - {feedback.get('user_name')}\n\n")
+
+                    f.write(f"\n\nSystem Messages\n\n")
+                    for message in system_messages:
+                        f.write(f"Message ID - {message.get('_id')}\n")
+                        f.write(f"Message - {message.get('message')}\n")
+                        f.write(f"Message Date - {message.get('created_at')}\n\n")
+
+                    f.write(f"\n\nEnd of File\n\n")
+
+                
+
+                return send_from_directory("/exports", f"{user_id}.txt", as_attachment=True)
+
+            return {"status": "error", "message": "Unable to find user associated with the given ID!"}, 400
+    else:
+        return {"status": "error", "message": "You are not authorized to access this page!"}, 401
+
 # Error Handlers
 
 
@@ -1150,4 +1266,4 @@ def handle_errors(e):
 
 
 if __name__ == "__main__":
-    app.run()
+    app.run(port=80, debug=True)
