@@ -291,7 +291,7 @@ hr {
     fill: #fff;
 }
 
-.danger {
+.danger, .error {
     background-color: #bb2124;
 }
 

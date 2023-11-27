@@ -18,13 +18,13 @@ newPostForm.addEventListener("submit", (e) => {
   let title = document.getElementById("title").value;
   let csrfToken = document.getElementById("csrf_token").value;
   let visibility = document.getElementById("visibility").value;
-  console.log(visibility);
   let content = tinymce.get("naked").getContent();
   let tags = document.getElementById("tags").value;
   let summary = document.getElementById("summary").value;
   let coverImge = document.getElementById("file-input").files[0];
 
   if (title == "" || content == "" || tags == "" || summary == "" || coverImge == undefined || visibility == "" || visibility == undefined || visibility == null) {
+    console.log("Some fields are empty");
     createAlert("error", "Some fields are empty, please fill them up");
     return;
   }
