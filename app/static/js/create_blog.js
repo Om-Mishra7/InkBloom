@@ -24,6 +24,13 @@ newPostForm.addEventListener("submit", (e) => {
   let summary = document.getElementById("summary").value;
   let coverImge = document.getElementById("file-input").files[0];
 
+  if (title == "" || content == "" || tags == "" || summary == "" || coverImge == undefined || visibility == "" || visibility == undefined || visibility == null) {
+    createAlert("error", "Some fields are empty, please fill them up");
+    return;
+  }
+
+
+
   
   let formData = new FormData();
   formData.append("title", title);
