@@ -136,6 +136,7 @@ pre code {
 
 pre code span {
   font-size: 1rem;
+  width: 100%;
 }
 
 .blog-suggested-blogs-list{

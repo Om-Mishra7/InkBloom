@@ -706,7 +706,7 @@ def profile_page():
             DATABASE["SYSTEM_MESSAGES"]
             .find({"user": session["user_id"]})
             .sort("_id", -1)
-        )
+        ).limit(5)
         return render_template(
             "profile.html", user=user, comments=comments, notifications=system_messages
         )
