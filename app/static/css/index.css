@@ -97,6 +97,10 @@ main .main-section {
     font-weight: 600;
 }
 
+.blog-link:hover {
+    text-decoration: none;
+}
+
 .blog-summary {
     margin-top: 5px;
     font-size: 0.9rem;

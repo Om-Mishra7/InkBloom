@@ -517,6 +517,17 @@ def edit_blog(blog_id):
 
 
 @app.route("/user/authorize", methods=["GET"])
+def authorize():
+    """
+    This function renders the authorization page of the application.
+    """
+    if session.get("logged_in"):
+        return redirect(url_for("index"))
+    return render_template("authorize.html", next = request.args.get("next"))
+
+
+
+@app.route("/user/authorize/github", methods=["GET"])
 def authentication():
     if session.get("logged_in"):
         return redirect(url_for("index"))
@@ -1336,4 +1347,4 @@ def handle_errors(e):
 
 
 if __name__ == "__main__":
-    app.run(port=80, debug=True)
+    app.run()
