@@ -23,15 +23,24 @@ newPostForm.addEventListener("submit", (e) => {
   let summary = document.getElementById("summary").value;
   let coverImge = document.getElementById("file-input").files[0];
 
-  if (title == "" || content == "" || tags == "" || summary == "" || coverImge == undefined || visibility == "" || visibility == undefined || visibility == null) {
-    console.log("Some fields are empty");
-    createAlert("error", "Some fields are empty, please fill them up");
+  if (title == "") {
+    createAlert("error", "Title cannot be empty");
     return;
   }
 
+  if (content == "") {
+    createAlert("error", "Content cannot be empty");
+    return;
+  }
 
+  if (summary == "") {
 
-  
+    createAlert("error", "Summary cannot be empty");
+
+    return;
+
+  }
+
   let formData = new FormData();
   formData.append("title", title);
   formData.append("visibility", visibility);
@@ -48,7 +57,7 @@ newPostForm.addEventListener("submit", (e) => {
     .then((res) => res.json())
     .then((data) => {
       if (data.status == "success") {
-        createAlert("success", data.message.replace(/\s/g , '-').trim());
+        createAlert("success", data.message.replace(/\s/g, '-').trim());
         setTimeout(() => {
           window.location.href = "/blogs/" + data.blog_slug;
         }, 1000);

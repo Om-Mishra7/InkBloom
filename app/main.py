@@ -198,7 +198,6 @@ def index():
     """
     This function renders the home page of the application.
     """
-    session["admin"] = True
     if session.get("admin"):
         blogs = DATABASE["BLOGS"].find().sort("_id", -1).limit(10)
         featured_blogs = (
