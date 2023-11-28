@@ -1248,14 +1248,6 @@ def subscribe(user_id):
                 },
             )
 
-            DATABASE["SYSTEM_MESSAGES"].insert_one(
-                {
-                    "user": int(user_id),
-                    "message": "Your subscription to the newsletter has been activated!",
-                    "created_at": datetime.now(),
-                }
-            )
-
             user = DATABASE["USERS"].find_one({"_id": int(user_id)})
 
             if not user:
@@ -1320,7 +1312,7 @@ def newsletter_subscribe():
                     "created_at": datetime.now(),
                 }
             )
-            return redirect(url_for("index"))
+            return redirect(url_for("profile_page"))
         return abort(404)
 
 
