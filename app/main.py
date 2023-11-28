@@ -194,6 +194,7 @@ def add_header(response):
 
 
 @app.route("/", methods=["GET"])
+@app.route("/blogs", methods=["GET"])
 def index():
     """
     This function renders the home page of the application.

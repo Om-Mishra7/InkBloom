@@ -205,13 +205,13 @@ main .sidebar-section {
 
 .sidebar-blog {
     width: 100%;
-    margin-bottom: 20px;
+    margin-bottom: 5px;
     display: flex;
     flex-direction: column;
     align-items: flex-start;
     justify-content: flex-start;
     gap: 5px;
-    padding: 0px 50px 30px 50px;
+    padding: 0px 50px 20px 50px;
 }
 
 .sidebar-blog-details {
