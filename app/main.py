@@ -179,7 +179,8 @@ def send_email(user_email, user_name, type, token):
     try:
         api_instance.send_transac_email(send_smtp_email)
         return True
-    except ApiException:
+    except ApiException as e:
+        print("Exception when calling SMTPApi->send_transac_email: %s\n" % e)
         return False
 
 
@@ -1198,6 +1199,9 @@ def unsubscribe(user_id):
         if user:
             DATABASE["USERS"].update_one(
                 {"_id": int(user_id)}, {"$set": {"newsletter_enabled": False}}
+            )
+            DATABASE["USERS"].update_one(
+                {"_id": int(user_id)}, {"$set": {"email": None}}
             )
             DATABASE["SYSTEM_MESSAGES"].insert_one(
                 {

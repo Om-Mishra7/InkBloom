@@ -35,8 +35,8 @@
       <div class="newsletter-settings">
         {% if user.newsletter_enabled %}
         <p>
-          You are currently subscribed to the newsletter. You can unsubscribe
-          from the newsletter by clicking the button below.
+          You are currently subscribed to the newsletter with the email address
+          ({{ user.email }}), to unsubscribe from the newsletter, click the button below.
         </p>
         <form method="PUT" class="unsubscribe-form">
           <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
