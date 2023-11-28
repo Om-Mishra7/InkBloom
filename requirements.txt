@@ -6,3 +6,4 @@ Flask-Session
 Flask-Limiter
 pymongo
 PurgoMalum
+sib-api-v3-sdk

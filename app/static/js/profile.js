@@ -74,7 +74,11 @@ if (subscribeButton) {
       .then((response) => response.json())
       .then((data) => {
         if (data.status === "success") {
-          window.location.reload();
+          createAlert("success", data.message);
+          setInterval(() => {
+            window.location.reload();
+          }
+            , 5000);
         }
       })
       .catch((error) => {

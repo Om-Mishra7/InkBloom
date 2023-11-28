@@ -15,9 +15,10 @@ import re
 import cgi
 import html
 import secrets
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from email import utils
 import json
+import token
 import requests
 from dotenv import load_dotenv
 import redis
@@ -40,10 +41,8 @@ from flask_limiter.util import get_remote_address
 from flask_session import Session
 from pymongo import MongoClient
 from purgo_malum import client
-import json
-from bson import json_util
-import json
-from datetime import datetime
+import sib_api_v3_sdk
+from sib_api_v3_sdk.rest import ApiException
 
 
 # Loading the environment variables
@@ -139,6 +138,49 @@ def calculate_read_time(html_content, words_per_minute=200, image_time_seconds=1
 
     total_read_time_minutes = text_read_time_minutes + (image_read_time_seconds / 60)
     return int(total_read_time_minutes)
+
+
+# Sendinblue API Configuration
+configuration = sib_api_v3_sdk.Configuration()
+configuration.api_key["api-key"] = os.getenv("SENDINBLUE_API_KEY")
+
+
+def send_email(user_email, user_name, type, token):
+    """
+    This function sends an email to the user.
+    """
+    api_instance = sib_api_v3_sdk.TransactionalEmailsApi(
+        sib_api_v3_sdk.ApiClient(configuration)
+    )
+
+    if type == "newsletter_subscription_confirmation":
+        subject = "Newsletter Subscription Confirmation | InkBloom"
+        sender = {
+            "name": "InkBloom | ProjectRexa",
+            "email": "noreply@projectrexa.dedyn.io",
+        }
+        to = [{"email": user_email, "name": user_name}]
+        reply_to = {
+            "email": "inkbloom@projectrexa.dedyn.io",
+            "name": "InkBloom | ProjectRexa",
+        }
+        html = render_template(
+            "email/newsletter_subscription_confirmation.html",
+            user_name=user_name.title(),
+            user_email=user_email,
+            token=token,
+        )
+        send_smtp_email = sib_api_v3_sdk.SendSmtpEmail(
+            to=to, html_content=html, reply_to=reply_to, sender=sender, subject=subject
+        )
+
+    else:
+        return False
+    try:
+        api_instance.send_transac_email(send_smtp_email)
+        return True
+    except ApiException:
+        return False
 
 
 # Application Template Filters
@@ -523,8 +565,7 @@ def authorize():
     """
     if session.get("logged_in"):
         return redirect(url_for("index"))
-    return render_template("authorize.html", next = request.args.get("next"))
-
+    return render_template("authorize.html", next=request.args.get("next"))
 
 
 @app.route("/user/authorize/github", methods=["GET"])
@@ -1177,6 +1218,7 @@ def unsubscribe(user_id):
 
 
 @app.route("/api/v1/users/<user_id>/subscribe", methods=["PUT"])
+@limiter.limit("5/day")
 def subscribe(user_id):
     if request.method == "PUT":
         if json.loads(request.data).get("csrf_token"):
@@ -1195,10 +1237,15 @@ def subscribe(user_id):
         user = DATABASE["USERS"].find_one({"_id": int(user_id)})
         if user:
             DATABASE["USERS"].update_one(
-                {"_id": int(user_id)}, {"$set": {"newsletter_enabled": True}}
+                {"_id": int(user_id)}, {"$set": {"newsletter_enabled": False}}
             )
             DATABASE["USERS"].update_one(
-                {"_id": int(user_id)}, {"$set": {"email": json.loads(request.data).get("email")}}
+                {"_id": int(user_id)},
+                {
+                    "$set": {
+                        "email": json.loads(request.data).get("email").strip().lower()
+                    }
+                },
             )
 
             DATABASE["SYSTEM_MESSAGES"].insert_one(
@@ -1208,15 +1255,73 @@ def subscribe(user_id):
                     "created_at": datetime.now(),
                 }
             )
+
+            user = DATABASE["USERS"].find_one({"_id": int(user_id)})
+
+            if not user:
+                return {
+                    "status": "error",
+                    "message": "The user associated with the given ID does not exist!",
+                }, 400
+
+            token = secrets.token_hex(16)
+
+            DATABASE["TOKENS"].insert_one(
+                {
+                    "user": int(user_id),
+                    "role": "newsletter-email-verification",
+                    "email": user["email"],
+                    "token": token,
+                    "created_at": datetime.now(),
+                }
+            )
+
+            if not send_email(user_email=user["email"],user_name=user["name"],token=token,type="newsletter_subscription_confirmation"):
+                return {
+                    "status": "error",
+                    "message": "Our systems are currently experiencing some issues, please try again later!",
+                }, 500
+
             return {
                 "status": "success",
-                "message": "You have been subscribed to the newsletter!",
+                "message": "Please review your email for the verification link needed to activate your subscription",
             }, 200
         return {"status": "error", "message": "Invalid user ID!"}, 400
     return {
         "status": "error",
         "message": "You are not authorized to access this page!",
     }, 401
+
+
+@app.route("/api/user/newsletter/subscribe", methods=["GET"])
+def newsletter_subscribe():
+    """
+    This functionverifies the email address of the user and activates the newsletter subscription.
+    """
+    token = request.args.get("token")
+    if token:
+        token = DATABASE["TOKENS"].find_one({"token": token})
+        if (
+            token
+            and token["role"] == "newsletter-email-verification"
+            and token["created_at"] + timedelta(hours=24) > datetime.now()
+        ):
+            DATABASE["USERS"].update_one(
+                {"_id": token["user"]}, {"$set": {"newsletter_enabled": True}}
+            )
+            DATABASE["USERS"].update_one(
+                {"_id": token["user"]}, {"$set": {"email": token["email"]}}
+            )
+            DATABASE["TOKENS"].delete_one({"token": token["token"]})
+            DATABASE["SYSTEM_MESSAGES"].insert_one(
+                {
+                    "user": token["user"],
+                    "message": "Your subscription to the newsletter has been activated!",
+                    "created_at": datetime.now(),
+                }
+            )
+            return redirect(url_for("index"))
+        return abort(404)
 
 
 @app.route("/api/v1/users/<user_id>/export", methods=["GET"])
