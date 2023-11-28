@@ -1289,7 +1289,7 @@ def subscribe(user_id):
     }, 401
 
 
-@app.route("/api/user/newsletter/subscribe", methods=["GET"])
+@app.route("/api/v1/user/newsletter/subscribe", methods=["GET"])
 def newsletter_subscribe():
     """
     This functionverifies the email address of the user and activates the newsletter subscription.
