@@ -1323,12 +1323,6 @@ def newsletter_subscribe():
 @app.route("/api/v1/users/<user_id>/export", methods=["GET"])
 def export_user_data(user_id):
     if session.get("logged_in") and session.get("user_id") == int(user_id):
-        if json.loads(request.data).get("csrf_token"):
-            if not check_crsf_token(json.loads(request.data).get("csrf_token")):
-                return {
-                    "status": "error",
-                    "message": "The request was discarded because it did not contain a valid CSRF token!",
-                }, 400
         user = DATABASE["USERS"].find_one({"_id": int(user_id)})
         if user:
             comments = DATABASE["COMMENTS"].find({"commented_by": int(user_id)})
