@@ -11,7 +11,7 @@ This file contains the server side code for the web application InkBloom, a powe
 # Importing the required libraries
 
 import os
-import re
+import urllib.parse
 import cgi
 import html
 import secrets
@@ -203,6 +203,12 @@ def rss_timestamp(s):
 def sitemap_timestamp(s):
     return s.strftime("%Y-%m-%d")
 
+@app.template_filter("url_encode")
+def urlencode(s):
+    print(s)
+    return urllib.parse.quote(s)
+
+
 
 @app.context_processor
 def app_version():
@@ -213,6 +219,7 @@ def app_version():
 def csrf_token():
     session["csrf_token"] = secrets.token_hex(16)
     return dict(csrf_token=session["csrf_token"])
+
 
 
 # After-request function for setting headers
@@ -1442,4 +1449,4 @@ def handle_errors(e):
 
 
 if __name__ == "__main__":
-    app.run(port=80)
+    app.run(port=8000)
