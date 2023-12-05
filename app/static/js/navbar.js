@@ -7,8 +7,7 @@ function toggleDropdown() {
       if (event.target != profileDropdown && event.target != profilePic) {
         profileDropdown.style.display = "none";
       }
-    }
-    );
+    });
   } else {
     document.getElementById("profile-dropdown").style.display = "none";
   }
@@ -33,31 +32,29 @@ searchBar.addEventListener("keyup", function (event) {
             searchResults.style.display = "none";
           });
         } else {
-          return response.json()
-            .then((data) => {
-              let searchResults = document.getElementById("search-results");
-              searchResults.innerHTML = "";
-              searchResults.style.display = "block";
-              data.forEach((element) => {
-                let result = document.createElement("a");
-                result.href = "/blogs/" + element.slug;
-                result.innerHTML = element.title;
-                searchResults.appendChild(result);
-              });
-              document.addEventListener("click", function (event) {
-                let searchResults = document.getElementById("search-results");
-                if (event.target != searchResults) {
-                  searchResults.style.display = "none";
-                }
-              });
+          return response.json().then((data) => {
+            let searchResults = document.getElementById("search-results");
+            searchResults.innerHTML = "";
+            searchResults.style.display = "block";
+            data.forEach((element) => {
+              let result = document.createElement("a");
+              result.href = "/blogs/" + element.slug;
+              result.innerHTML = element.title;
+              searchResults.appendChild(result);
             });
+            document.addEventListener("click", function (event) {
+              let searchResults = document.getElementById("search-results");
+              if (event.target != searchResults) {
+                searchResults.style.display = "none";
+              }
+            });
+          });
         }
       })
       .catch((error) => {
         console.error("Error:", error);
       });
-  }
-  else {
+  } else {
     let searchResults = document.getElementById("search-results");
     searchResults.innerHTML = "";
     searchResults.style.display = "none";
@@ -65,8 +62,10 @@ searchBar.addEventListener("keyup", function (event) {
 });
 
 let profilePic = document.getElementById("profile-pic");
-profilePic.addEventListener("click", function () {
-  toggleDropdown();
-});
+if (profilePic) {
+  profilePic.addEventListener("click", function () {
+    toggleDropdown();
+  });
+}
 
 document.getElementById("profile-dropdown").style.display = "none";

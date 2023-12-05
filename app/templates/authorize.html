@@ -9,7 +9,7 @@
     {% include 'partials/navbar.html' %}
     <main>
 
-        <button class="button button-github" onclick="window.location.href='/user/authorize/github?next={{next}}'">
+        <button class="button button-github" onclick=window.location.href="/user/authorize/github?next={{next}}">
             <svg
           xmlns="http://www.w3.org/2000/svg"
           viewBox="0 0 32 32"
@@ -23,7 +23,7 @@
         </svg>
             <span>Continue with GitHub</span>
         </button>
-        <button disabled class="button button-projectrexa" onclick="window.location.href='/user/authorize/projectrexa?next={{next}}'">
+        <button disabled class="button button-projectrexa" onclick="window.location.href='/user/authorize/projectrexa?next={{ (next | url_encode) }}'">
             <img src="https://wsrv.nl/?url=https://cdn.projectrexa.dedyn.io/projectrexa/assets/logo_no_background.png&w=50&h=50&maxage=31d&q=75&output=webp" alt="ProjectRexa Logo" />
             <span>Continue with ProjectRexa</span>
         </button>
