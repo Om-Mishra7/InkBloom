@@ -1,17 +1,26 @@
 <meta charset="UTF-8" />
 <!-- Primary Meta Tags -->
-<meta name="title" content="{{ (title + ' - InkBloom|ProjectRexa Blog') if title else 'InkBloom|ProjectRexa Blog'}}" />
+<meta
+  name="title"
+  content="{{ (title + ' - InkBloom|ProjectRexa Blog') if title else 'InkBloom|ProjectRexa Blog'}}"
+/>
 <meta
   name="description"
   <meta
-    property="og:description"
-    content="{{ description if description else 'Welcome to InkBloom, my personal tech blog!' }}"
-  />
+  property="og:description"
+  content="{{ description if description else 'Welcome to InkBloom, my personal tech blog!' }}"
+/>
 
 <!-- Open Graph / Facebook -->
 <meta property="og:type" content="website" />
-<meta property="og:url" content="https://blog.projectrexa.dedyn.io{{ url_for(request.endpoint, **request.view_args) }}" />
-<meta property="og:title" content="{{ (title + ' - InkBloom|ProjectRexa Blog') if title else 'InkBloom|ProjectRexa Blog'}}" />
+<meta
+  property="og:url"
+  content="https://blog.projectrexa.dedyn.io{{ url_for(request.endpoint, **request.view_args) }}"
+/>
+<meta
+  property="og:title"
+  content="{{ (title + ' - InkBloom|ProjectRexa Blog') if title else 'InkBloom|ProjectRexa Blog'}}"
+/>
 <meta
   property="og:description"
   content="{{ description if description else 'Welcome to InkBloom, my personal tech blog!' }}"
@@ -25,11 +34,17 @@
 <meta property="twitter:card" content="summary_large_image" />
 <meta name="twitter:site" content="@projectrexa" />
 <meta name="twitter:creator" content="@projectrexa" />
-<meta property="twitter:url" content="https://blog.projectrexa.dedyn.io{{ url_for(request.endpoint, **request.view_args) }}" />
-<meta property="twitter:title" content="{{ (title + ' - InkBloom|ProjectRexa Blog') if title else 'InkBloom|ProjectRexa Blog'}}" />
+<meta
+  property="twitter:url"
+  content="https://blog.projectrexa.dedyn.io{{ url_for(request.endpoint, **request.view_args) }}"
+/>
+<meta
+  property="twitter:title"
+  content="{{ (title + ' - InkBloom|ProjectRexa Blog') if title else 'InkBloom|ProjectRexa Blog'}}"
+/>
 <meta
   property="twitter:description"
-  content= "{{ description if description else 'Welcome to InkBloom, my personal tech blog!' }}"
+  content="{{ description if description else 'Welcome to InkBloom, my personal tech blog!' }}"
 />
 <meta
   property="twitter:image"
@@ -45,14 +60,12 @@
   href="https://cdn.projectrexa.dedyn.io/projectrexa/assets/favicon.ico"
 />
 
-<!-- Microsoft Clarity tracking code for https://projectrexa.dedyn.io/ -->
-<script>
-  (function(c,l,a,r,i,t,y){
-      c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
-      t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i+"?ref=bwt";
-      y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
-  })(window, document, "clarity", "script", "jp7vv18dmt");
-</script>
+<!-- Plausible Analytics -->
+<script
+  defer
+  data-domain="blog.projectrexa.dedyn.io"
+  src="https://plausible.io/js/script.js"
+></script>
 
 <link rel="stylesheet" href="/static/css/base.css" />
 <script src="/static/js/base.js" defer></script>
