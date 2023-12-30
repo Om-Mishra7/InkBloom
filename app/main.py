@@ -594,7 +594,7 @@ def authentication():
             "message": "The server was unable to process your request! | Error Code - 00001",
         }, 500
 
-    projectrexa_auth_url = f"http://127.0.0.1:5500/api/v1/oauth/authenticate?requestState={secrets.token_hex(16)}&applicationID={os.getenv('PROJECTREXA_CLIENT_ID')}&redirectURI=https://blog.projectrexa.dedyn.io/oauth-callback/projectrexa"
+    projectrexa_auth_url = f"https://accounts.projectrexa.dedyn.io/api/v1/oauth/authenticate?requestState={secrets.token_hex(16)}&applicationID={os.getenv('PROJECTREXA_CLIENT_ID')}&redirectURI=https://blog.projectrexa.dedyn.io/oauth-callback/projectrexa"
 
     return redirect(projectrexa_auth_url)
 
@@ -611,7 +611,7 @@ def oauth_callback():
         return redirect(url_for("index"))
 
     try:
-        projectrexa_token_url = "http://127.0.0.1:5500/api/v1/oauth/user?applicationID={}&applicationSecret={}&token={}".format(
+        projectrexa_token_url = "https://accounts.projectrexa.dedyn.io/api/v1/oauth/user?applicationID={}&applicationSecret={}&token={}".format(
             os.getenv("PROJECTREXA_CLIENT_ID"),
             os.getenv("PROJECTREXA_CLIENT_SECRET"),
             code,
@@ -1458,4 +1458,4 @@ def handle_errors(e):
 
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run()
