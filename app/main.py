@@ -726,7 +726,7 @@ def signout():
     This function signs the user out of the application.
     """
     session.clear()
-    return redirect(url_for("index"))
+    return redirect("https://accounts.projectrexa.dedyn.io/sign-out")
 
 
 @app.route("/search")
@@ -829,6 +829,7 @@ def ping():
 
 
 # Application API Routes
+
 
 @app.route("/api/v1/user", methods=["GET"])
 def get_user():
