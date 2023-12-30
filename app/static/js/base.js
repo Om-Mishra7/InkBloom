@@ -25,7 +25,6 @@ function autoLogin() {
       } else if (response.status === 401) {
         fetch("https://accounts.projectrexa.dedyn.io", {
           method: "POST",
-          credentials: "include",
           headers: {
             "Content-Type": "application/json",
           },
