@@ -203,11 +203,11 @@ def rss_timestamp(s):
 def sitemap_timestamp(s):
     return s.strftime("%Y-%m-%d")
 
+
 @app.template_filter("url_encode")
 def urlencode(s):
     print(s)
     return urllib.parse.quote(s)
-
 
 
 @app.context_processor
@@ -219,7 +219,6 @@ def app_version():
 def csrf_token():
     session["csrf_token"] = secrets.token_hex(16)
     return dict(csrf_token=session["csrf_token"])
-
 
 
 # After-request function for setting headers
@@ -573,10 +572,10 @@ def authorize():
     """
     if session.get("logged_in"):
         return redirect(url_for("index"))
-    return render_template("authorize.html", next=request.args.get("next"))
+    return render_template("authorize.html")
 
 
-@app.route("/user/authorize/github", methods=["GET"])
+@app.route("/user/authorize/projectrexa", methods=["GET"])
 def authentication():
     if session.get("logged_in"):
         return redirect(url_for("index"))
@@ -589,25 +588,20 @@ def authentication():
     if next_url:
         session["next"] = next_url
 
-    if os.getenv("GITHUB_CLIENT_ID") is None:
+    if os.getenv("PROJECTREXA_CLIENT_ID") is None:
         return {
             "status": "error",
             "message": "The server was unable to process your request! | Error Code - 00001",
         }, 500
 
-    github_auth_url = "https://github.com/login/oauth/authorize"
-    github_auth_url += "?client_id=" + os.getenv("GITHUB_CLIENT_ID")
-    github_auth_url += "&redirect_uri=" + (
-        os.getenv("LOCAL_GITHUB_REDIRECT_URL")
-        or "https://blog.projectrexa.dedyn.io/user/github/callback"
-    )
-    github_auth_url += "&read:user"
+    projectrexa_auth_url = f"http://127.0.0.1:5500/api/v1/oauth/authenticate?requestState={secrets.token_hex(16)}&applicationID={os.getenv('PROJECTREXA_CLIENT_ID')}&redirectURI=https://blog.projectrexa.dedyn.io/oauth-callback/projectrexa"
 
-    return redirect(github_auth_url)
+    return redirect(projectrexa_auth_url)
 
 
-@app.route("/user/github/callback")
-def github_callback():
+@app.route("/oauth-callback/projectrexa", methods=["GET"])
+def oauth_callback():
+    print(request.args.get("code"))
     if session.get("logged_in"):
         return redirect(url_for("index"))
 
@@ -617,55 +611,62 @@ def github_callback():
         return redirect(url_for("index"))
 
     try:
-        github_token_url = "https://github.com/login/oauth/access_token"
-        github_token_url += f"?client_id={os.getenv('GITHUB_CLIENT_ID')}"
-        github_token_url += f"&client_secret={os.getenv('GITHUB_CLIENT_SECRET')}"
-        github_token_url += f"&code={code}"
-
-        response = requests.post(
-            github_token_url,
-            headers={"Accept": "application/json"},
-            timeout=5,
+        projectrexa_token_url = "http://127.0.0.1:5500/api/v1/oauth/user?applicationID={}&applicationSecret={}&token={}".format(
+            os.getenv("PROJECTREXA_CLIENT_ID"),
+            os.getenv("PROJECTREXA_CLIENT_SECRET"),
+            code,
         )
 
-        access_token = response.json()["access_token"]
+        response = requests.post(
+            projectrexa_token_url,
+            headers={"Accept": "application/json", "Content-Type": "application/json"},
+            data=json.dumps(
+                {
+                    "applicationID": os.getenv("PROJECTREXA_CLIENT_ID"),
+                    "applicationSecret": os.getenv("PROJECTREXA_CLIENT_SECRET"),
+                    "token": code,
+                }
+            ),
+        )
 
-        user_data = requests.get(
-            "https://api.github.com/user",
-            headers={"Authorization": f"Bearer {access_token}"},
-            timeout=5,
-        ).json()
+        user_data = response.json()
 
-        user = DATABASE["USERS"].find_one({"_id": user_data["id"]})
+        user = DATABASE["USERS"].find_one({"_id": user_data["user"]["userID"]})
 
         if user is None:
             DATABASE["USERS"].insert_one(
                 {
-                    "_id": user_data["id"],
-                    "github_id": user_data["login"],
-                    "name": user_data["name"] or "User",
-                    "profile_pic": user_data["avatar_url"],
-                    "admin": False,
+                    "_id": user_data["user"]["userID"],
+                    "github_id": user_data["user"]["userName"],
+                    "name": user_data["user"]["firstName"]
+                    + " "
+                    + user_data["user"]["lastName"],
+                    "profile_pic": user_data["user"]["profileImageURL"],
+                    "admin": True
+                    if user_data["user"]["accountRole"] == "ADMIN"
+                    else False,
                     "blocked": False,
                     "deleted": False,
-                    "signup_method": "github",
+                    "signup_method": "projectrexa",
                     "newsletter_enabled": False,
                     "preferred_theme": "noir nebula",
                     "created_at": datetime.now(),
                     "last_updated_at": datetime.now(),
                 }
             )
-            user = DATABASE["USERS"].find_one({"_id": user_data["id"]})
+            user = DATABASE["USERS"].find_one({"_id": user_data["user"]["userID"]})
 
         else:
             user_schema = {
-                "github_id": user_data["login"],
-                "name": user_data["name"] or "User",
-                "profile_pic": user_data["avatar_url"],
+                "github_id": user_data["user"]["userName"],
+                "name": user_data["user"]["firstName"]
+                + " "
+                + user_data["user"]["lastName"],
+                "profile_pic": user_data["user"]["profileImageURL"],
                 "admin": False,
                 "blocked": False,
                 "deleted": False,
-                "signup_method": "github",
+                "signup_method": "projectrexa",
                 "newsletter_enabled": False,
                 "preferred_theme": "noir nebula",
                 "created_at": datetime.now(),
@@ -675,19 +676,21 @@ def github_callback():
             for key, value in user_schema.items():
                 if user.get(key) is None:
                     DATABASE["USERS"].update_one(
-                        {"_id": user_data["id"]},
+                        {"_id": user_data["user"]["userID"]},
                         {"$set": {key: value}},
                     )
                 else:
                     continue
 
             DATABASE["USERS"].update_one(
-                {"_id": user_data["id"]},
+                {"_id": user_data["user"]["userID"]},
                 {
                     "$set": {
-                        "github_id": user_data["login"],
-                        "name": user_data["name"] or "User",
-                        "profile_pic": user_data["avatar_url"],
+                        "github_id": user_data["user"]["userName"],
+                        "name": user_data["user"]["firstName"]
+                        + " "
+                        + user_data["user"]["lastName"],
+                        "profile_pic": user_data["user"]["profileImageURL"],
                         "last_updated_at": datetime.now(),
                     }
                 },
@@ -713,6 +716,7 @@ def github_callback():
         return redirect("/user/authorize" + "?error=Something went wrong!")
 
     except Exception as e:
+        print(e)
         return redirect("/user/authorize" + "?error=Something went wrong!")
 
 
@@ -1279,7 +1283,12 @@ def subscribe(user_id):
                 }
             )
 
-            if not send_email(user_email=user["email"],user_name=user["name"],token=token,type="newsletter_subscription_confirmation"):
+            if not send_email(
+                user_email=user["email"],
+                user_name=user["name"],
+                token=token,
+                type="newsletter_subscription_confirmation",
+            ):
                 return {
                     "status": "error",
                     "message": "Our systems are currently experiencing some issues, please try again later!",
@@ -1449,4 +1458,4 @@ def handle_errors(e):
 
 
 if __name__ == "__main__":
-    app.run()
+    app.run(debug=True)
