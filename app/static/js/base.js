@@ -13,22 +13,38 @@ function createAlert(type, message) {
 }
 
 function autoLogin() {
-  fetch("https://accounts.projectrexa.dedyn.io", {
-    method: "POST",
-    credentials: "include",
+  fetch("/api/v1/user", {
+    method: "GET",
     headers: {
       "Content-Type": "application/json",
     },
   })
     .then((response) => {
       if (response.status === 200) {
-        window.location.href = "/user/authorize/projectrexa";
+        return;
+      } else if (response.status === 401) {
+        fetch("https://accounts.projectrexa.dedyn.io", {
+          method: "POST",
+          credentials: "include",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        })
+          .then((response) => {
+            if (response.status === 200) {
+              window.location.href = "/user/authorize/projectrexa";
+            }
+          })
+          .catch((error) => {
+            createAlert("error", "ProjectRexa authentication services are momentarily unavailable, auto-login has been disabled.");
+          });
       }
     })
     .catch((error) => {
       createAlert("error", "ProjectRexa authentication services are momentarily unavailable, auto-login has been disabled.");
     });
 }
+
 
 
 document.addEventListener("DOMContentLoaded", () => {

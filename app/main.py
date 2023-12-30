@@ -16,7 +16,7 @@ import cgi
 import html
 import secrets
 from datetime import datetime, timezone, timedelta
-from email import utils
+from email import message, utils
 import json
 import token
 import requests
@@ -830,6 +830,18 @@ def ping():
 
 # Application API Routes
 
+@app.route("/api/v1/user", methods=["GET"])
+def get_user():
+    if session.get("logged_in"):
+        return {
+            "status": "success",
+            message: "You are logged in!",
+        }, 200
+    return {
+        "status": "error",
+        "message": "You are not authorized to access this page!",
+    }, 401
+
 
 @app.route("/api/v1/search", methods=["GET"])
 def search():
@@ -1458,4 +1470,4 @@ def handle_errors(e):
 
 
 if __name__ == "__main__":
-    app.run()
+    app.run(port=8000)
