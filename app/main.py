@@ -637,7 +637,7 @@ def oauth_callback():
             DATABASE["USERS"].insert_one(
                 {
                     "_id": user_data["user"]["userID"],
-                    "github_id": user_data["user"]["userName"],
+                    "account_id": user_data["user"]["userName"],
                     "name": user_data["user"]["firstName"]
                     + " "
                     + user_data["user"]["lastName"],
@@ -658,7 +658,7 @@ def oauth_callback():
 
         else:
             user_schema = {
-                "github_id": user_data["user"]["userName"],
+                "account_id": user_data["user"]["userName"],
                 "name": user_data["user"]["firstName"]
                 + " "
                 + user_data["user"]["lastName"],
@@ -686,7 +686,7 @@ def oauth_callback():
                 {"_id": user_data["user"]["userID"]},
                 {
                     "$set": {
-                        "github_id": user_data["user"]["userName"],
+                        "account_id": user_data["user"]["userName"],
                         "name": user_data["user"]["firstName"]
                         + " "
                         + user_data["user"]["lastName"],
@@ -700,11 +700,11 @@ def oauth_callback():
             if user.get("deleted", True):
                 return redirect(
                     "/user/authorize"
-                    + "?error=This account assosiated with this GitHub account has been deleted!"
+                    + "?error=This account assosiated with this ProjectRexa account has been deleted!"
                 )
             session["logged_in"] = True
             session["user_id"] = user.get("_id")
-            session["github_id"] = user.get("github_id")
+            session["account_id"] = user.get("account_id")
             session["user_name"] = user.get("name")
             session["profile_pic"] = user.get("profile_pic")
             session["newsletter_enabled"] = user.get("newsletter_enabled", False)
@@ -1458,4 +1458,4 @@ def handle_errors(e):
 
 
 if __name__ == "__main__":
-    app.run()
+    app.run(port=8000, debug=True)
