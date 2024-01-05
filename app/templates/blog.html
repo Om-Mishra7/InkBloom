@@ -89,7 +89,7 @@
           {% endif %}
         {% else %}
         <div class="blog-authentication-notice">
-          <p class="comment-form-login">You need to be <a href="/user/authorize?next={{ ((url_for(request.endpoint, **request.view_args)) | url_encode) }}">authenticated</a> to comment.</p>
+          <p class="comment-form-login">You need to be <a onclick="signIn();">authenticated</a> to comment.</p>
         </div>
         {% endif %}
          <div class="blog-comments-list">

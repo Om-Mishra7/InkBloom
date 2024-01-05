@@ -45,8 +45,20 @@ function autoLogin() {
     });
 }
 
+function signIn() {
+  localStorage.setItem("manualLogout", false);
+  
+  window.location.href = `/user/sign-in?next=${window.location.href}`;
+}
+
+function signOut() {
+  localStorage.setItem("manualLogout", true);
+  window.location.href = `/user/sign-out?next=${window.location.href}`;
+}
 
 
 document.addEventListener("DOMContentLoaded", () => {
-  autoLogin();
+  if (localStorage.getItem("manualLogout") !== "true") {
+    autoLogin();
+  }
 });
