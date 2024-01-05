@@ -570,9 +570,7 @@ def authorize():
     """
     This function renders the authorization page of the application.
     """
-    if session.get("logged_in"):
-        return redirect(url_for("index"))
-    return render_template("authorize.html")
+    return redirect(url_for("authentication"))
 
 
 @app.route("/user/authorize/projectrexa", methods=["GET"])
