@@ -68,4 +68,6 @@ if (profilePic) {
   });
 }
 
-document.getElementById("profile-dropdown").style.display = "none";
+if (document.getElementById("profile-dropdown")) {
+  document.getElementById("profile-dropdown").style.display = "none";
+}

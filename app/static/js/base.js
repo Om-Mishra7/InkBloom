@@ -47,8 +47,8 @@ function autoLogin() {
 
 function signIn() {
   localStorage.setItem("manualLogout", false);
-  
-  window.location.href = `/user/sign-in?next=${window.location.href}`;
+
+  window.location.href = `/user/authorize?next=${window.location.href}`;
 }
 
 function signOut() {
