@@ -726,9 +726,7 @@ def signout():
     This function signs the user out of the application.
     """
     session.clear()
-    return redirect(
-        "https://accounts.projectrexa.dedyn.io/sign-out?next=https://blog.projectrexa.dedyn.io"
-    )
+    return redirect(request.args.get("next") or url_for("index"))
 
 
 @app.route("/search")
