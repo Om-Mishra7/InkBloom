@@ -641,7 +641,7 @@ def oauth_callback():
                     "name": user_data["user"]["firstName"]
                     + " "
                     + user_data["user"]["lastName"],
-                    "profile_pic": user_data["user"]["profileImageURL"],
+                    "profile_pic": user_data["user"]["userProfileImageURL"],
                     "admin": True
                     if user_data["user"]["accountRole"] == "ADMIN"
                     else False,
