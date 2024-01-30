@@ -828,15 +828,22 @@ def ping():
 
 @app.route("/api/v1/user", methods=["GET"])
 def get_user():
-    if session.get("logged_in"):
+    try:
+        if session.get("logged_in"):
+            return {
+                "status": "success",
+                "message": "You are logged in!",
+            }, 200
+        else:
+            return {
+                "status": "error",
+                "message": "You are not authorized to access this page!",
+            }, 401
+    except Exception:
         return {
-            "status": "success",
-            message: "You are logged in!",
-        }, 200
-    return {
-        "status": "error",
-        "message": "You are not authorized to access this page!",
-    }, 401
+            "status": "error",
+            "message": "The server was unable to process your request!",
+        }, 500
 
 
 @app.route("/api/v1/search", methods=["GET"])
