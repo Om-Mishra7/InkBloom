@@ -715,6 +715,7 @@ def oauth_callback():
 
     except Exception as e:
         print(e)
+        print(response.json())
         return redirect("/user/authorize" + "?error=" + str(e))
 
 
