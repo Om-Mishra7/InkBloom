@@ -713,11 +713,9 @@ def oauth_callback():
 
             return redirect(session.get("next") or url_for("index"))
 
-        return redirect("/user/authorize" + "?error=Something went wrong!")
-
     except Exception as e:
         print(e)
-        return redirect("/user/authorize" + "?error=Something went wrong!")
+        return redirect("/user/authorize" + "?error=" + str(e))
 
 
 @app.route("/user/sign-out", methods=["GET"])
