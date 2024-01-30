@@ -180,7 +180,6 @@ def send_email(user_email, user_name, type, token):
         api_instance.send_transac_email(send_smtp_email)
         return True
     except ApiException as e:
-        print("Exception when calling SMTPApi->send_transac_email: %s\n" % e)
         return False
 
 
@@ -206,7 +205,6 @@ def sitemap_timestamp(s):
 
 @app.template_filter("url_encode")
 def urlencode(s):
-    print(s)
     return urllib.parse.quote(s)
 
 
@@ -714,8 +712,6 @@ def oauth_callback():
             return redirect(session.get("next") or url_for("index"))
 
     except Exception as e:
-        print(e)
-        print(response.json())
         return redirect("/user/authorize" + "?error=" + str(e))
 
 
