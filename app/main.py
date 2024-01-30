@@ -662,7 +662,7 @@ def oauth_callback():
                 "name": user_data["user"]["firstName"]
                 + " "
                 + user_data["user"]["lastName"],
-                "profile_pic": user_data["user"]["profileImageURL"],
+                "profile_pic": user_data["user"]["userProfileImageURL"],
                 "admin": False,
                 "blocked": False,
                 "deleted": False,
@@ -690,7 +690,7 @@ def oauth_callback():
                         "name": user_data["user"]["firstName"]
                         + " "
                         + user_data["user"]["lastName"],
-                        "profile_pic": user_data["user"]["profileImageURL"],
+                        "profile_pic": user_data["user"]["userProfileImageURL"],
                         "last_updated_at": datetime.now(),
                     }
                 },

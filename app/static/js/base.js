@@ -23,7 +23,7 @@ function autoLogin() {
       if (response.status === 200) {
         return;
       } else if (response.status === 401) {
-        fetch("https://accounts.projectrexa.dedyn.io", {
+        fetch("https://accounts.om-mishra.com", {
           method: "POST",
           credentials: "include",
           headers: {
