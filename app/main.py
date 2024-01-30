@@ -570,6 +570,8 @@ def authorize():
     """
     This function renders the authorization page of the application.
     """
+    if request.args.get("error"):
+        return {"status": "error", "message": request.args.get("error")}, 400
     return redirect(url_for("authentication"))
 
 
