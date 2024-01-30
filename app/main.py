@@ -641,7 +641,7 @@ def oauth_callback():
                     + user_data["user"]["lastName"],
                     "profile_pic": user_data["user"]["userProfileImageURL"],
                     "admin": True
-                    if user_data["user"]["accountRole"] == "ADMIN"
+                    if user_data["user"]["userRole"] == "ADMIN"
                     else False,
                     "blocked": False,
                     "deleted": False,
@@ -661,7 +661,7 @@ def oauth_callback():
                 + " "
                 + user_data["user"]["lastName"],
                 "profile_pic": user_data["user"]["userProfileImageURL"],
-                "admin": False,
+                "admin": user_data["user"]["userRole"] == "ADMIN",
                 "blocked": False,
                 "deleted": False,
                 "signup_method": "projectrexa",
@@ -690,6 +690,7 @@ def oauth_callback():
                         + user_data["user"]["lastName"],
                         "profile_pic": user_data["user"]["userProfileImageURL"],
                         "last_updated_at": datetime.now(),
+                        "admin": True if user_data["user"]["userRole"] == "ADMIN" else False,
                     }
                 },
             )
