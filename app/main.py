@@ -1,34 +1,24 @@
-# Author: Om Mishra ( https://projectrexa.dedyn.io | https://github.com/Om-Mishra7 )
-# Contact Detail: inkbloom@projectrexa.dedyn.io ( Do not spam this email address please :) )
-# Written for the InkBloom Project
-# Date Created: 03-11-2023
-# Last Modified: 20-11-2023
-
-"""
-This file contains the server side code for the web application InkBloom, a powerful and versatile blog application that simplifies the process of creating, managing, and sharing your thoughts with the world.
-"""
+# Author: Om Mishra ( https://om-mishra.com | https://github.com/Om-Mishra7 )
 
 # Importing the required libraries
 
 import os
+import re
 import urllib.parse
-import cgi
 import html
+import redis	
+import utils
 import secrets
 from datetime import datetime, timezone, timedelta
-from email import message, utils
 import json
-import token
 import requests
 from dotenv import load_dotenv
-import redis
 from bson import ObjectId
 from flask import (
     Flask,
     render_template,
     send_from_directory,
     url_for,
-    flash,
     redirect,
     request,
     session,
@@ -36,13 +26,8 @@ from flask import (
     jsonify,
     Response,
 )
-from flask_limiter import Limiter
-from flask_limiter.util import get_remote_address
 from flask_session import Session
 from pymongo import MongoClient
-from purgo_malum import client
-import sib_api_v3_sdk
-from sib_api_v3_sdk.rest import ApiException
 
 
 # Loading the environment variables
@@ -53,10 +38,9 @@ load_dotenv()
 
 app = Flask(__name__)
 
-# Getting the service version
+# Setting the service version
 
-with open("app/app.json", "r") as f:
-    service_version = json.load(f)["service-version"]
+service_version = "4.1.0"
 
 # App Configuration
 
@@ -81,39 +65,13 @@ mongodb_url = os.getenv("MONGODB_URL")
 if not mongodb_url:
     raise RuntimeError("Environment variable MONGODB_URL not set")
 
-mongodb_database = os.getenv("MONGODB_DATABASE")
-if not mongodb_database:
-    raise RuntimeError("Environment variable MONGODB_DATABASE not set")
-
 MONOGDB_CLIENT = MongoClient(mongodb_url)
-DATABASE = MONOGDB_CLIENT[mongodb_database]
+DATABASE = MONOGDB_CLIENT["INKBLOOM"]
 
 
 # Session Initialization
 
 Session(app)
-
-# Rate Limiter Configuration
-
-pool = redis.connection.BlockingConnectionPool.from_url(redis_url)
-if not pool:
-    raise RuntimeError("Could not connect to redis")
-limiter = Limiter(
-    app=app,
-    key_func=lambda: get_remote_address(),
-    storage_uri=redis_url,
-    storage_options={"connection_pool": pool},
-    strategy="moving-window",
-)
-
-# Application Utility Functions
-
-
-def profanity_check(comment):
-    """
-    This function checks for profanity in the comment.
-    """
-    return client.contains_profanity(comment)
 
 
 def check_crsf_token(token):
@@ -138,49 +96,6 @@ def calculate_read_time(html_content, words_per_minute=200, image_time_seconds=1
 
     total_read_time_minutes = text_read_time_minutes + (image_read_time_seconds / 60)
     return int(total_read_time_minutes)
-
-
-# Sendinblue API Configuration
-configuration = sib_api_v3_sdk.Configuration()
-configuration.api_key["api-key"] = os.getenv("SENDINBLUE_API_KEY")
-
-
-def send_email(user_email, user_name, type, token):
-    """
-    This function sends an email to the user.
-    """
-    api_instance = sib_api_v3_sdk.TransactionalEmailsApi(
-        sib_api_v3_sdk.ApiClient(configuration)
-    )
-
-    if type == "newsletter_subscription_confirmation":
-        subject = "Newsletter Subscription Confirmation | InkBloom"
-        sender = {
-            "name": "InkBloom | ProjectRexa",
-            "email": "noreply@projectrexa.dedyn.io",
-        }
-        to = [{"email": user_email, "name": user_name}]
-        reply_to = {
-            "email": "inkbloom@projectrexa.dedyn.io",
-            "name": "InkBloom | ProjectRexa",
-        }
-        html = render_template(
-            "email/newsletter_subscription_confirmation.html",
-            user_name=user_name.title(),
-            user_email=user_email,
-            token=token,
-        )
-        send_smtp_email = sib_api_v3_sdk.SendSmtpEmail(
-            to=to, html_content=html, reply_to=reply_to, sender=sender, subject=subject
-        )
-
-    else:
-        return False
-    try:
-        api_instance.send_transac_email(send_smtp_email)
-        return True
-    except ApiException as e:
-        return False
 
 
 # Application Template Filters
@@ -225,7 +140,7 @@ def csrf_token():
 @app.after_request
 def add_header(response):
     response.headers["Access-Control-Allow-Origin"] = "*"
-    response.headers["Cache-Control"] = "no-cache, must-revalidate"
+    response.headers["Cache-Control"] = "public, max-age=3600"
     response.headers["X-Frame-Options"] = "SAMEORIGIN"
     response.headers["X-Content-Type-Options"] = "nosniff"
     response.headers["X-XSS-Protection"] = "1; mode=block"
@@ -247,23 +162,30 @@ def index():
     This function renders the home page of the application.
     """
     if session.get("admin"):
-        blogs = DATABASE["BLOGS"].find().sort("_id", -1).limit(10)
-        featured_blogs = (
-            DATABASE["BLOGS"].find({"featured": True}).sort("_id", -1).limit(3)
-        )
-        return render_template(
-            "index.html",
-            blogs=blogs,
-            featured_blogs=featured_blogs,
-        )
+        blogs_pipeline = [
+            {"$sort": {"_id": -1}},
+            {"$limit": 10}
+        ]
+        featured_blogs_pipeline = [
+            {"$match": {"featured": True}},
+            {"$sort": {"_id": -1}},
+            {"$limit": 3}
+        ]
+    else:
+        blogs_pipeline = [
+            {"$match": {"visibility": "public"}},
+            {"$sort": {"_id": -1}},
+            {"$limit": 10}
+        ]
+        featured_blogs_pipeline = [
+            {"$match": {"featured": True, "visibility": "public"}},
+            {"$sort": {"_id": -1}},
+            {"$limit": 3}
+        ]
 
-    blogs = DATABASE["BLOGS"].find({"visibility": "public"}).sort("_id", -1).limit(10)
-    featured_blogs = (
-        DATABASE["BLOGS"]
-        .find({"featured": True, "visibility": "public"})
-        .sort("_id", -1)
-        .limit(3)
-    )
+    blogs = list(DATABASE["BLOGS"].aggregate(blogs_pipeline))
+    featured_blogs = list(DATABASE["BLOGS"].aggregate(featured_blogs_pipeline))
+
     return render_template(
         "index.html",
         blogs=blogs,
@@ -931,7 +853,6 @@ def get_blogs(last_blog_id):
 
 
 @app.route("/api/v1/user/comments", methods=["POST"])
-@limiter.limit("5/minute")
 def post_user_comments():
     if request.method == "POST" and session.get("logged_in"):
         data = request.get_json()
@@ -1063,7 +984,6 @@ def delete_user_comments(comment_id):
 
 
 @app.route("/api/v1/statisics/views/<blog_slug>", methods=["POST"])
-@limiter.limit("5/minute")
 def get_blog_views(blog_slug):
     blog = DATABASE["BLOGS"].find_one({"slug": blog_slug})
 
@@ -1075,7 +995,6 @@ def get_blog_views(blog_slug):
 
 
 @app.route("/api/v1/user-content/upload", methods=["POST"])
-@limiter.limit("10/minute")
 def upload_user_content():
     if request.method == "POST" and session.get("logged_in") and session.get("admin"):
         file = request.files.get("file")
@@ -1168,7 +1087,6 @@ def delete_blog(blog_id):
 
 
 @app.route("/api/v1/feedback", methods=["POST"])
-@limiter.limit("5/minute")
 def feedback():
     if request.method == "POST" and session.get("logged_in"):
         data = request.get_json()
@@ -1249,7 +1167,6 @@ def unsubscribe(user_id):
 
 
 @app.route("/api/v1/users/<user_id>/subscribe", methods=["PUT"])
-@limiter.limit("5/day")
 def subscribe(user_id):
     if request.method == "PUT":
         if json.loads(request.data).get("csrf_token"):
