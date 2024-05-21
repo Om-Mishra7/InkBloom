@@ -3,31 +3,28 @@
 # Importing the required libraries
 
 import os
+import base64
 import re
 import urllib.parse
-import html
-import redis	
+import redis
 import utils
 import secrets
 from datetime import datetime, timezone, timedelta
-import json
 import requests
 from dotenv import load_dotenv
-from bson import ObjectId
 from flask import (
     Flask,
     render_template,
-    send_from_directory,
     url_for,
     redirect,
     request,
     session,
-    abort,
     jsonify,
-    Response,
+    abort,
 )
 from flask_session import Session
 from pymongo import MongoClient
+import uuid
 
 
 # Loading the environment variables
@@ -72,17 +69,6 @@ DATABASE = MONOGDB_CLIENT["INKBLOOM"]
 # Session Initialization
 
 Session(app)
-
-
-def check_crsf_token(token):
-    """
-    This function checks for CSRF token in the request.
-    """
-    if not token:
-        return False
-    if token != session.get("csrf_token"):
-        return False
-    return True
 
 
 def calculate_read_time(html_content, words_per_minute=200, image_time_seconds=12):
@@ -140,1234 +126,869 @@ def csrf_token():
 @app.after_request
 def add_header(response):
     response.headers["Access-Control-Allow-Origin"] = "*"
-    response.headers["Cache-Control"] = "public, max-age=3600"
+    # response.headers["Cache-Control"] = "public, max-age=3600"
     response.headers["X-Frame-Options"] = "SAMEORIGIN"
     response.headers["X-Content-Type-Options"] = "nosniff"
     response.headers["X-XSS-Protection"] = "1; mode=block"
-    response.headers[
-        "Strict-Transport-Security"
-    ] = "max-age=31536000; includeSubDomains"
+    response.headers["Strict-Transport-Security"] = (
+        "max-age=31536000; includeSubDomains"
+    )
     response.headers["Referrer-Policy"] = "no-referrer"
     response.headers["Connection"] = "keep-alive"
     return response
 
 
-# Application User Routes
+# Application Routes
 
 
 @app.route("/", methods=["GET"])
-@app.route("/blogs", methods=["GET"])
 def index():
-    """
-    This function renders the home page of the application.
-    """
-    if session.get("admin"):
+    if (
+        session.get("user") is not None
+        and session.get("user").get("username") == "om-mishra7"
+    ):
         blogs_pipeline = [
             {"$sort": {"_id": -1}},
-            {"$limit": 10}
+            {
+                "$lookup": {
+                    "from": "USERS",
+                    "localField": "blog_author.user_id",
+                    "foreignField": "user_id",
+                    "as": "author_details",
+                }
+            },
+            {"$unwind": "$author_details"},
         ]
         featured_blogs_pipeline = [
-            {"$match": {"featured": True}},
+            {"$match": {"blog_metadata.featured": True}},
             {"$sort": {"_id": -1}},
-            {"$limit": 3}
+            {"$limit": 5},
+            {
+                "$lookup": {
+                    "from": "USERS",
+                    "localField": "blog_author.user_id",
+                    "foreignField": "user_id",
+                    "as": "author_details",
+                }
+            },
+            {"$unwind": "$author_details"},
         ]
     else:
         blogs_pipeline = [
-            {"$match": {"visibility": "public"}},
+            {"$match": {"blog_metadata.visibility": "public"}},
             {"$sort": {"_id": -1}},
-            {"$limit": 10}
+            {
+                "$lookup": {
+                    "from": "USERS",
+                    "localField": "blog_author.user_id",
+                    "foreignField": "user_id",
+                    "as": "author_details",
+                }
+            },
+            {"$unwind": "$author_details"},
         ]
         featured_blogs_pipeline = [
-            {"$match": {"featured": True, "visibility": "public"}},
+            {
+                "$match": {
+                    "blog_metadata.visibility": "public",
+                    "blog_metadata.featured": True,
+                }
+            },
             {"$sort": {"_id": -1}},
-            {"$limit": 3}
+            {"$limit": 5},
+            {
+                "$lookup": {
+                    "from": "USERS",
+                    "localField": "blog_author.user_id",
+                    "foreignField": "user_id",
+                    "as": "author_details",
+                }
+            },
+            {"$unwind": "$author_details"},
         ]
 
     blogs = list(DATABASE["BLOGS"].aggregate(blogs_pipeline))
     featured_blogs = list(DATABASE["BLOGS"].aggregate(featured_blogs_pipeline))
 
-    return render_template(
-        "index.html",
-        blogs=blogs,
-        featured_blogs=featured_blogs,
-    )
+    return render_template("index.html", blogs=blogs, featured_blogs=featured_blogs)
 
 
-@app.route("/blogs/<blog_slug>", methods=["GET"])
-def blog(blog_slug):
-    """
-    Render the blog page of the application.
-    """
-    blog = DATABASE["BLOGS"].find_one({"slug": blog_slug})
-    comments = DATABASE["COMMENTS"].find({"blog_slug": blog_slug})
-    comments_list = list(comments)
-    if blog:
-        if blog["visibility"] == "private" and session.get("admin") is False:
-            abort(404)
-
-        suggested_blogs = (
-            DATABASE["BLOGS"].find({"tags": {"$in": blog.get("tags", [])}}).limit(2)
-        )
-        suggested_blogs = list(
-            filter(lambda x: x.get("slug") != blog_slug, suggested_blogs)
-        )
-        return render_template(
-            "blog.html",
-            blog=blog,
-            comments=comments_list,
-            suggested_blogs=suggested_blogs,
-            title=blog.get("title", ""),
-            description=blog.get("summary", ""),
-            image=blog.get("cover_image", ""),
-        )
-
-    if blog:
-        return render_template(
-            "blog.html",
-            blog=blog,
-            comments=comments_list,
-            title=blog.get("title", ""),
-            description=blog.get("summary", ""),
-            image=blog.get("cover_image", ""),
-        )
-    abort(404)
+@app.route("/blog/new-blog", methods=["GET"])
+def new_blog():
+    if (
+        session.get("user") is None
+        and session.get("user").get("username") != "om-mishra7"
+    ):
+        return redirect(url_for("login"))
+    return render_template("create_blog.html")
 
 
-"""
-This function creates a new blog post and saves it to the database. It renders the create blog page of the application and handles the form submission. If the user is not logged in or is not an admin, it returns a 401 error. If the form is not filled correctly, it returns a 400 error. If the cover image is not found or is not a valid image format, it returns a 400 error. If there is an error while uploading the file, it returns a 500 error. If the blog is created successfully, it returns a 200 status code with the blog slug.
-"""
-
-
-@app.route("/admin/blogs/create", methods=["GET", "POST"])
+@app.route("/api/blog", methods=["POST"])
 def create_blog():
-    """
-    Render the create blog page of the application.
-    """
-    if request.method == "POST":
-        try:
-            if session["logged_in"] and session["admin"]:
-                if request.form.get("csrf_token"):
-                    if not check_crsf_token(request.form.get("csrf_token")):
-                        return {
-                            "status": "error",
-                            "message": "The request was discarded because it did not contain a valid CSRF token!",
-                        }, 400
-                else:
-                    return {
-                        "status": "error",
-                        "message": "The request was discarded because it did not contain a CSRF token!",
-                    }, 400
-                blog_title = request.form.get("title")
-                blog_content = request.form.get("content")
-                visibility = request.form.get("visibility")
-                blog_tags = [
-                    tag.strip().lower()
-                    for tag in request.form.get("tags", "").split(",")
-                    if tag.strip()
-                ]
-                blog_summary = request.form.get("summary")
-                blog_slug = blog_title.replace(" ", "-").lower()
-                blog_cover_image = request.files.get("cover_image")
-                authour = session.get("user_id")
-                authour_name = session.get("user_name")
-                blog_featured = "featured" in blog_tags
-                blog_tags = [tag for tag in blog_tags if tag != "featured"]
-            else:
-                abort(401)
-        except Exception:
-            return {
-                "status": "error",
-                "message": "Please fill all the fields correctly",
-            }, 400
+    if (
+        session.get("user") is None
+        and session.get("user").get("username") != "om-mishra7"
+    ):
+        return redirect(url_for("login"))
+    blog_title = request.form.get("title")
+    blog_description = request.form.get("description")
+    blog_slug = request.form.get("slug").lower()
+    blog_tags = [
+        tag.strip() for tag in request.form.get("tags").lower().strip().split(",")
+    ]
+    blog_category = request.form.get("category").lower()
+    blog_visibility = request.form.get("visibility").lower()
+    blog_featured = request.form.get("featured")
+    blog_cover = request.files.get("cover")
+    blog_content = request.form.get("content")
 
-        while DATABASE["BLOGS"].find_one({"slug": blog_slug}):
-            blog_slug = blog_slug + "-" + secrets.token_hex(4)
-
-        if not blog_cover_image or blog_cover_image.filename == "":
-            return {"status": "error", "message": "No cover image found!"}, 400
-
-        valid_image_types = [
-            "image/png",
-            "image/jpeg",
-            "image/jpg",
-            "image/gif",
-            "image/webp",
-            "svg+xml",
-        ]
-        if blog_cover_image.content_type not in valid_image_types:
-            return {
-                "status": "error",
-                "message": "The cover image does not have a valid image format!",
-            }, 400
-
-        try:
-            response = requests.post(
-                "http://ather.api.projectrexa.dedyn.io/upload",
-                files={"file": blog_cover_image.read()},
-                data={
-                    "key": f"projectrexa/blog/assets/{secrets.token_hex(16)}",
-                    "content_type": blog_cover_image.content_type,
-                    "public": "true",
-                },
-                headers={"X-Authorization": os.getenv("ATHER_API_KEY") or ""},
-                timeout=10,
-            ).json()
-            blog_cover_image_url = response.get("access_url")
-        except Exception as e:
-            return {
-                "status": "error",
-                "message": "Something went wrong while uploading the file!",
-            }, 500
-
-        if not blog_cover_image_url:
-            return {"status": "error", "message": "No cover image found!"}, 400
-
-        blog = {
-            "title": blog_title,
-            "content": blog_content,
-            "visibility": visibility,
-            "tags": blog_tags,
-            "summary": blog_summary,
-            "slug": blog_slug,
-            "cover_image": blog_cover_image_url,
-            "authour": authour,
-            "authour_name": authour_name,
-            "authour_profile_pic": session.get("profile_pic"),
-            "featured": blog_featured,
-            "read_time": calculate_read_time(blog_content),
-            "views": 0,
-            "comments_count": 0,
-            "created_at": datetime.now(),
-            "last_updated_at": datetime.now(),
-        }
-
-        DATABASE["BLOGS"].insert_one(blog)
-        DATABASE["COMMENTS"].insert_one(
+    if (
+        not blog_title
+        or not blog_description
+        or not blog_slug
+        or not blog_tags
+        or not blog_category
+        or not blog_visibility
+        or not blog_cover
+        or not blog_content
+    ):
+        return jsonify(
             {
-                "blog_slug": blog_slug,
-                "comment": "Please do not harass or abuse anyone in the comments section. We have a zero tolerance policy for harassment and abuse. If you are found to be violating our policy, you will be blocked from posting further comments.",
-                "commented_by": "Moderation Bot",
-                "user_name": "Moderation Bot",
-                "user_profile_pic": "https://cdn.projectrexa.dedyn.io/favicon.ico",
-                "user_role": "admin",
-                "created_at": datetime.now(),
+                "status": "error",
+                "message": f"The following fields are required: {'Title' if not blog_title else ''} {'Description' if not blog_description else ''} {'Slug' if not blog_slug else ''} {'Tags' if not blog_tags else ''} {'Category' if not blog_category else ''} {'Visibility' if not blog_visibility else ''} {'Cover' if not blog_cover else ''} {'Content' if not blog_content else ''}",
             }
         )
 
-        return {
-            "status": "success",
-            "message": "Blog created successfully!",
-            "blog_slug": blog_slug,
-        }, 200
+    # All images in the content are base64 encoded, so we need to extract them and upload them to the CDN and replace the base64 encoded images with the CDN URLs
 
-    elif session.get("logged_in") and session.get("admin"):
-        return render_template("create_blog.html")
-    else:
-        abort(401)
+    image_urls = []
 
+    # Find all base64-encoded images in the blog content
+    base64_images = re.findall(
+        r'<img src="data:image/([^;]+);base64,([^"]+)"', blog_content
+    )
 
-@app.route("/admin/blogs/edit/<blog_id>", methods=["GET", "POST"])
-def edit_blog(blog_id):
-    """
-    This function renders the edit blog page of the application
-    """
-    if request.method == "POST":
+    # Loop through each base64-encoded image found
+    for image_type, image_data in base64_images:
+        # Decode the base64 image data
         try:
-            if session["logged_in"] and session["admin"]:
-                if request.form.get("csrf_token"):
-                    if not check_crsf_token(request.form.get("csrf_token")):
-                        return {
-                            "status": "error",
-                            "message": "The request was discarded because it did not contain a valid CSRF token!",
-                        }, 400
-                else:
-                    return {
-                        "status": "error",
-                        "message": "The request was discarded because it did not contain a CSRF token!",
-                    }, 400
-                blog_title = request.form.get("title")
-                blog_content = request.form.get("content")
-                visibilty = request.form.get("visibility")
-                blog_tags = [
-                    tag.strip().lower()
-                    for tag in request.form.get("tags", "").split(",")
-                    if tag.strip()
-                ]
-                blog_summary = request.form.get("summary")
-                blog_slug = blog_title.replace(" ", "-").lower()
-                blog_cover_image = request.files.get("cover_image")
-                authour = session.get("user_id")
-                authour_name = session.get("user_name")
-                blog_featured = "featured" in blog_tags
-                blog_tags = [tag for tag in blog_tags if tag != "featured"]
-            else:
-                abort(401)
-        except Exception:
-            return {
-                "status": "error",
-                "message": "Please fill all the fields correctly",
-            }, 400
-
-        blog = DATABASE["BLOGS"].find_one({"_id": ObjectId(blog_id)})
-        if not blog:
-            return {"status": "error", "message": "Invalid blog ID!"}, 400
-
-        if not blog_cover_image or blog_cover_image.filename == "":
-            blog_cover_image_url = blog["cover_image"]
-        else:
-            valid_image_types = [
-                "image/png",
-                "image/jpeg",
-                "image/jpg",
-                "image/gif",
-                "image/webp",
-                "svg+xml",
-            ]
-            if blog_cover_image.content_type not in valid_image_types:
-                return {
-                    "status": "error",
-                    "message": "The cover image does not have a valid image format!",
-                }, 400
-
-            try:
-                response = requests.post(
-                    "http://ather.api.projectrexa.dedyn.io/upload",
-                    files={"file": blog_cover_image.read()},
-                    data={
-                        "key": f"projectrexa/blog/assets/{secrets.token_hex(16)}",
-                        "content_type": blog_cover_image.content_type,
-                        "public": "true",
-                    },
-                    headers={"X-Authorization": os.getenv("ATHER_API_KEY") or ""},
-                    timeout=10,
-                ).json()
-                blog_cover_image_url = response.get("access_url")
-            except Exception as e:
-                return {
-                    "status": "error",
-                    "message": "Something went wrong while uploading the file!",
-                }, 500
-
-            if not blog_cover_image_url:
-                return {"status": "error", "message": "No cover image found!"}, 400
-
-        DATABASE["BLOGS"].update_one(
-            {"_id": ObjectId(blog_id)},
-            {
-                "$set": {
-                    "title": blog_title,
-                    "content": blog_content,
-                    "visibility": visibilty,
-                    "tags": blog_tags,
-                    "summary": blog_summary,
-                    "slug": blog_slug,
-                    "cover_image": blog_cover_image_url,
-                    "featured": blog_featured,
-                    "read_time": calculate_read_time(blog_content),
-                    "last_updated_at": datetime.now(),
-                }
-            },
-        )
-
-        return {
-            "status": "success",
-            "message": "Blog updated successfully!",
-            "blog_slug": blog_slug,
-        }, 200
-
-    elif session.get("logged_in") and session.get("admin"):
-        blog = DATABASE["BLOGS"].find_one({"_id": ObjectId(blog_id)})
-        if not blog:
-            abort(404)
-        blog["tags"].append("featured" if blog["featured"] else "")
-        return render_template("create_blog.html", blog=blog)
-    else:
-        abort(401)
-
-
-@app.route("/user/authorize", methods=["GET"])
-def authorize():
-    """
-    This function renders the authorization page of the application.
-    """
-    if request.args.get("error"):
-        return {"status": "error", "message": request.args.get("error")}, 400
-    return redirect(url_for("authentication"))
-
-
-@app.route("/user/authorize/projectrexa", methods=["GET"])
-def authentication():
-    if session.get("logged_in"):
-        return redirect(url_for("index"))
-
-    error_message = request.args.get("error")
-    if error_message:
-        return {"status": "error", "message": html.escape(error_message)}, 400
-
-    next_url = request.args.get("next")
-    if next_url:
-        session["next"] = next_url
-
-    if os.getenv("PROJECTREXA_CLIENT_ID") is None:
-        return {
-            "status": "error",
-            "message": "The server was unable to process your request! | Error Code - 00001",
-        }, 500
-
-    projectrexa_auth_url = f"https://accounts.om-mishra.com/api/v1/oauth/authenticate?requestState={secrets.token_hex(16)}&applicationID={os.getenv('PROJECTREXA_CLIENT_ID')}&redirectURI=https://blog.projectrexa.dedyn.io/oauth-callback/projectrexa"
-
-    return redirect(projectrexa_auth_url)
-
-
-@app.route("/oauth-callback/projectrexa", methods=["GET"])
-def oauth_callback():
-    print(request.args.get("code"))
-    if session.get("logged_in"):
-        return redirect(url_for("index"))
-
-    code = request.args.get("code")
-
-    if code is None:
-        return redirect(url_for("index"))
-
-    try:
-        projectrexa_token_url = "https://accounts.om-mishra.com/api/v1/oauth/user?applicationID={}&applicationSecret={}&token={}".format(
-            os.getenv("PROJECTREXA_CLIENT_ID"),
-            os.getenv("PROJECTREXA_CLIENT_SECRET"),
-            code,
-        )
-
-        response = requests.post(
-            projectrexa_token_url,
-            headers={"Accept": "application/json", "Content-Type": "application/json"},
-            data=json.dumps(
+            image = base64.b64decode(image_data)
+        except base64.binascii.Error:
+            return jsonify(
                 {
-                    "applicationID": os.getenv("PROJECTREXA_CLIENT_ID"),
-                    "applicationSecret": os.getenv("PROJECTREXA_CLIENT_SECRET"),
-                    "token": code,
-                }
-            ),
-        )
-
-        user_data = response.json()
-
-        user = DATABASE["USERS"].find_one({"_id": user_data["user"]["userID"]})
-
-        if user is None:
-            DATABASE["USERS"].insert_one(
-                {
-                    "_id": user_data["user"]["userID"],
-                    "account_id": user_data["user"]["userName"],
-                    "name": user_data["user"]["firstName"]
-                    + " "
-                    + user_data["user"]["lastName"],
-                    "profile_pic": user_data["user"]["userProfileImageURL"],
-                    "admin": True
-                    if user_data["user"]["userRole"] == "ADMIN"
-                    else False,
-                    "blocked": False,
-                    "deleted": False,
-                    "signup_method": "projectrexa",
-                    "newsletter_enabled": False,
-                    "preferred_theme": "noir nebula",
-                    "created_at": datetime.now(),
-                    "last_updated_at": datetime.now(),
-                }
-            )
-            user = DATABASE["USERS"].find_one({"_id": user_data["user"]["userID"]})
-
-        else:
-            user_schema = {
-                "account_id": user_data["user"]["userName"],
-                "name": user_data["user"]["firstName"]
-                + " "
-                + user_data["user"]["lastName"],
-                "profile_pic": user_data["user"]["userProfileImageURL"],
-                "admin": user_data["user"]["userRole"] == "ADMIN",
-                "blocked": False,
-                "deleted": False,
-                "signup_method": "projectrexa",
-                "newsletter_enabled": False,
-                "preferred_theme": "noir nebula",
-                "created_at": datetime.now(),
-                "last_updated_at": datetime.now(),
-            }
-
-            for key, value in user_schema.items():
-                if user.get(key) is None:
-                    DATABASE["USERS"].update_one(
-                        {"_id": user_data["user"]["userID"]},
-                        {"$set": {key: value}},
-                    )
-                else:
-                    continue
-
-            DATABASE["USERS"].update_one(
-                {"_id": user_data["user"]["userID"]},
-                {
-                    "$set": {
-                        "account_id": user_data["user"]["userName"],
-                        "name": user_data["user"]["firstName"]
-                        + " "
-                        + user_data["user"]["lastName"],
-                        "profile_pic": user_data["user"]["userProfileImageURL"],
-                        "last_updated_at": datetime.now(),
-                        "admin": True if user_data["user"]["userRole"] == "ADMIN" else False,
-                    }
-                },
-            )
-
-        if user is not None:
-            if user.get("deleted", True):
-                return redirect(
-                    "/user/authorize"
-                    + "?error=This account assosiated with this ProjectRexa account has been deleted!"
-                )
-            session["logged_in"] = True
-            session["user_id"] = user.get("_id")
-            session["account_id"] = user.get("account_id")
-            session["user_name"] = user.get("name")
-            session["profile_pic"] = user.get("profile_pic")
-            session["newsletter_enabled"] = user.get("newsletter_enabled", False)
-            session["admin"] = user.get("admin", False)
-            session["blocked"] = user.get("blocked", False)
-
-            return redirect(session.get("next") or url_for("index"))
-
-    except Exception as e:
-        return redirect("/user/authorize" + "?error=" + str(e))
-
-
-@app.route("/user/sign-out", methods=["GET"])
-def signout():
-    """
-    This function signs the user out of the application.
-    """
-    session.clear()
-    return redirect(request.args.get("next") or url_for("index"))
-
-
-@app.route("/search")
-def search_page():
-    """
-    This function renders the search page of the application.
-    """
-    return render_template("search.html")
-
-
-@app.route("/user/feedback")
-def feedback_page():
-    """
-    This function renders the feedback page of the application.
-    """
-    if session.get("logged_in"):
-        return render_template("feedback.html")
-    return abort(401)
-
-
-@app.route("/user/account")
-def profile_page():
-    """
-    This function renders the profile page of the application.
-    """
-    if session.get("logged_in"):
-        user = DATABASE["USERS"].find_one({"_id": session["user_id"]})
-        comments = DATABASE["COMMENTS"].find({"commented_by": session["user_id"]})
-        system_messages = (
-            DATABASE["SYSTEM_MESSAGES"]
-            .find({"user": session["user_id"]})
-            .sort("_id", -1)
-        ).limit(5)
-        return render_template(
-            "profile.html", user=user, comments=comments, notifications=system_messages
-        )
-    return abort(401)
-
-
-@app.route("/user/<user_id>")
-def user_page(user_id):
-    """
-    This function renders the user page of the application.
-    """
-    user = DATABASE["USERS"].find_one({"_id": int(user_id)})
-    if user:
-        comments = DATABASE["COMMENTS"].find({"commented_by": int(user_id)})
-        return render_template("user.html", user=user, comments=comments)
-    abort(404)
-
-
-@app.route("/rss")
-def rss():
-    """
-    This function renders the RSS feed of the application.
-    """
-    blogs = DATABASE["BLOGS"].find({"visibility": "public"}).sort("_id", -1)
-    date = utils.format_datetime(datetime.now(timezone.utc))
-
-    return (
-        render_template("web-feed/rss.xml", blogs=blogs, date=date),
-        200,
-        {"Content-Type": "application/xml"},
-    )
-
-
-@app.route("/sitemap")
-def sitemap():
-    """
-    This function renders the sitemap of the application.
-    """
-    blogs = DATABASE["BLOGS"].find({"visibility": "public"}).sort("_id", -1)
-    # 2022-06-04
-    date = datetime.now(timezone.utc).strftime("%Y-%m-%d")
-    return (
-        render_template("web-feed/sitemap.xml", blogs=blogs, date=date),
-        200,
-        {"Content-Type": "application/xml"},
-    )
-
-
-@app.route("/robots.txt")
-def robots():
-    """
-    This function renders the robots.txt of the application.
-    """
-    return (
-        send_from_directory("static", "crawlers/robots.txt"),
-        200,
-        {"Content-Type": "text/plain"},
-    )
-
-
-@app.route("/ping")
-def ping():
-    """
-    This function renders the ping page of the application.
-    """
-    return "pong", 200, {"Content-Type": "text/plain"}
-
-
-# Application API Routes
-
-
-@app.route("/api/v1/user", methods=["GET"])
-def get_user():
-    try:
-        if session.get("logged_in"):
-            return {
-                "status": "success",
-                "message": "You are logged in!",
-            }, 200
-        else:
-            return {
-                "status": "error",
-                "message": "You are not authorized to access this page!",
-            }, 401
-    except Exception:
-        return {
-            "status": "error",
-            "message": "The server was unable to process your request!",
-        }, 500
-
-
-@app.route("/api/v1/search", methods=["GET"])
-def search():
-    """
-    This function returns the search results.
-    """
-    query = request.args.get("query")
-    if query and len(query) > 2:
-        # Allow only public blogs to be searched by non-admin users
-        if session.get("admin"):
-            blogs = (
-                DATABASE["BLOGS"]
-                .find(
-                    {
-                        "$or": [
-                            {"title": {"$regex": query, "$options": "i"}},
-                            {"tags": {"$regex": query, "$options": "i"}},
-                            {"summary": {"$regex": query, "$options": "i"}},
-                        ]
-                    }
-                )
-                .limit(3)
-            )
-        else:
-            blogs = (
-                DATABASE["BLOGS"]
-                .find(
-                    {
-                        "$and": [
-                            {"visibility": "public"},
-                            {
-                                "$or": [
-                                    {"title": {"$regex": query, "$options": "i"}},
-                                    {"tags": {"$regex": query, "$options": "i"}},
-                                    {"summary": {"$regex": query, "$options": "i"}},
-                                ]
-                            },
-                        ]
-                    }
-                )
-                .limit(3)
-            )
-
-        if blogs:
-            blogs = [
-                {
-                    "_id": str(blog["_id"]),
-                    "title": blog["title"],
-                    "slug": blog["slug"],
-                }
-                for blog in blogs
-            ]
-
-            if not blogs:
-                return jsonify([]), 404
-
-            return jsonify(blogs), 200
-    else:
-        return jsonify([]), 404
-
-
-@app.route("/api/v1/blogs/<last_blog_id>", methods=["GET"])
-def get_blogs(last_blog_id):
-    blogs = DATABASE["BLOGS"].find({"_id": {"$lt": ObjectId(last_blog_id)}}).limit(5)
-
-    if blogs:
-        blogs = [
-            {
-                "_id": str(blog["_id"]),
-                "title": blog["title"],
-                "summary": blog["summary"],
-                "slug": blog["slug"],
-            }
-            for blog in blogs
-        ]
-
-        if not blogs:
-            return jsonify([]), 404
-
-        return jsonify(blogs), 200
-
-    abort(404)
-
-
-@app.route("/api/v1/user/comments", methods=["POST"])
-def post_user_comments():
-    if request.method == "POST" and session.get("logged_in"):
-        data = request.get_json()
-        comment = data.get("comment")
-        blog_slug = data.get("slug")
-        if data.get("csrf_token"):
-            if not check_crsf_token(data.get("csrf_token")):
-                return {
                     "status": "error",
-                    "message": "The request was discarded because it did not contain a valid CSRF token!",
-                }, 400
-        else:
-            return {
-                "status": "error",
-                "message": "The request was discarded because it did not contain a CSRF token!",
-            }, 400
-
-        if comment:
-            if len(comment) > 1000:
-                return {
-                    "status": "error",
-                    "message": "Comment length cannot exceed 1000 characters!",
-                }, 400
-
-            if profanity_check(comment) and not session["admin"]:
-                DATABASE["USERS"].update_one(
-                    {"_id": session["user_id"]}, {"$set": {"blocked": True}}
-                )
-
-                DATABASE["SYSTEM_MESSAGES"].insert_one(
-                    {
-                        "user": session.get("user_id"),
-                        "message": f"Your most recent comment has been removed because it contained profanity. You have been blocked from posting further comments!, in case you think this is a mistake, please email us at <a href='mailto:support@projectrexa.dedyn.io'>support@projectrexa.dedyn.io</a>.<br><br>Original Comment - {comment}",
-                        "created_at": datetime.now(),
-                    }
-                )
-
-                session.clear()
-
-                return {
-                    "status": "error",
-                    "message": "Your comment contains profanity. You have been blocked from posting further comments!",
-                }, 400
-
-            if not DATABASE["BLOGS"].find_one({"slug": blog_slug}):
-                return {"status": "error", "message": "Invalid blog ID!"}, 400
-
-            if DATABASE["USERS"].find_one({"_id": session["user_id"]}) is not None:
-                if (
-                    DATABASE["USERS"]
-                    .find_one({"_id": session["user_id"]})
-                    .get("blocked", False)
-                ):
-                    session.clear()
-
-                    return {
-                        "status": "error",
-                        "message": "You have been blocked from posting further comments!",
-                    }, 400
-
-            else:
-                return {
-                    "status": "error",
-                    "message": "The server was unable to process your request!",
-                }, 500
-
-            DATABASE["BLOGS"].update_one(
-                {"slug": blog_slug},
-                {"$inc": {"comments_count": 1}},
-            )
-
-            DATABASE["COMMENTS"].insert_one(
-                {
-                    "blog_slug": blog_slug,
-                    "comment": comment,
-                    "commented_by": session["user_id"],
-                    "user_name": session["user_name"],
-                    "user_profile_pic": session["profile_pic"],
-                    "user_role": "admin" if session["admin"] else "user",
-                    "created_at": datetime.now(),
+                    "message": "Invalid base64 image data found!",
                 }
             )
 
-            DATABASE["SYSTEM_MESSAGES"].insert_one(
-                {
-                    "user": session["user_id"],
-                    "message": f"Your comment on the blog https://blog.projectrexa.dedyn.io/blogs/{blog_slug} has been saved successfully!",
-                    "created_at": datetime.now(),
-                }
-            )
-
-            return {"status": "success", "message": "Comment posted successfully!"}, 200
-
-        return {
-            "status": "error",
-            "message": "Please make sure all the fields are filled correctly!",
-        }, 400
-
-    return {
-        "status": "error",
-        "message": "You are not authorized to access this page!",
-    }, 401
-
-
-@app.route("/api/v1/user/comments/<comment_id>", methods=["DELETE"])
-def delete_user_comments(comment_id):
-    if request.method == "DELETE" and session.get("logged_in"):
-        comment = DATABASE["COMMENTS"].find_one({"_id": ObjectId(comment_id)})
-        if comment:
-            if comment["commented_by"] != session["user_id"] and not session["admin"]:
-                return {
-                    "status": "error",
-                    "message": "You are not authorized to access this page!",
-                }, 401
-            DATABASE["COMMENTS"].delete_one({"_id": ObjectId(comment_id)})
-            DATABASE["BLOGS"].update_one(
-                {"slug": comment["blog_slug"]},
-                {"$inc": {"comments_count": -1}},
-            )
-            return {
-                "status": "success",
-                "message": "Comment deleted successfully!",
-            }, 200
-        return {"status": "error", "message": "Invalid comment ID!"}, 400
-    return {
-        "status": "error",
-        "message": "You are not authorized to access this page!",
-    }, 401
-
-
-@app.route("/api/v1/statisics/views/<blog_slug>", methods=["POST"])
-def get_blog_views(blog_slug):
-    blog = DATABASE["BLOGS"].find_one({"slug": blog_slug})
-
-    if blog:
-        DATABASE["BLOGS"].update_one({"slug": blog_slug}, {"$inc": {"views": 1}})
-        return str(blog["views"])
-
-    abort(404)
-
-
-@app.route("/api/v1/user-content/upload", methods=["POST"])
-def upload_user_content():
-    if request.method == "POST" and session.get("logged_in") and session.get("admin"):
-        file = request.files.get("file")
-
-        if not file:
-            return {"status": "error", "message": "No file found!"}, 400
-
-        if file.filename == "":
-            return {"status": "error", "message": "No file found!"}, 400
-
-        allowed_content_types = [
-            "image/png",
-            "image/jpeg",
-            "image/jpg",
-            "image/gif",
-            "image/webp",
-            "svg+xml",
-        ]
-
-        if file.content_type not in allowed_content_types:
-            return {"status": "error", "message": "Invalid file type!"}, 400
-
+        # Send a POST request to upload the image to the CDN
         try:
-            response = requests.post(
-                "http://ather.api.projectrexa.dedyn.io/upload",
-                files={"file": file.read()},
-                data={
-                    "key": f"projectrexa/blog/assets/{secrets.token_hex(16)}",
-                    "content_type": file.content_type,
-                    "public": "true",
-                },
-                headers={"X-Authorization": os.getenv("ATHER_API_KEY") or ""},
-                timeout=10,
-            ).json()
-
-            return {
-                "status": "success",
-                "message": "File uploaded successfully!",
-                "location": f'https://wsrv.nl?url={response["access_url"]}&maxage=31d&q=100&output=webp',
-            }, 200
-        except Exception as e:
-            return {
-                "status": "error",
-                "message": "Something went wrong while uploading the file!",
-            }, 500
-
-    abort(401)
-
-
-@app.route("/api/v1/user/block/<user_id>", methods=["POST"])
-def nuke_user(user_id):
-    if request.method == "POST" and session.get("logged_in") and session.get("admin"):
-        user = DATABASE["USERS"].find_one({"_id": int(user_id)})
-        if user:
-            if user.get("admin", False):
-                return {
-                    "status": "error",
-                    "message": "Privilege level is not sufficient to perform this action!",
-                }, 400
-            DATABASE["USERS"].update_one(
-                {"_id": int(user_id)}, {"$set": {"blocked": True}}
-            )
-            DATABASE["COMMENTS"].delete_many({"commented_by": int(user_id)})
-
-            return {"status": "success", "message": "User blocked successfully!"}, 200
-
-        return {"status": "error", "message": "Invalid user ID!"}, 400
-    return {
-        "status": "error",
-        "message": "You are not authorized to access this page!",
-    }, 401
-
-
-@app.route("/api/v1/admin/blogs/<blog_id>", methods=["DELETE"])
-def delete_blog(blog_id):
-    if request.method == "DELETE" and session.get("logged_in") and session.get("admin"):
-        blog = DATABASE["BLOGS"].find_one({"_id": ObjectId(blog_id)})
-        if blog:
-            DATABASE["BLOGS"].delete_one({"_id": ObjectId(blog_id)})
-            DATABASE["COMMENTS"].delete_many({"blog_slug": blog["slug"]})
-            return {
-                "status": "success",
-                "message": "Blog deleted successfully!",
-            }, 200
-        return {"status": "error", "message": "Invalid blog ID!"}, 400
-    return {
-        "status": "error",
-        "message": "You are not authorized to access this page!",
-    }, 401
-
-
-@app.route("/api/v1/feedback", methods=["POST"])
-def feedback():
-    if request.method == "POST" and session.get("logged_in"):
-        data = request.get_json()
-        if data.get("csrf_token"):
-            if not check_crsf_token(data.get("csrf_token")):
-                return {
-                    "status": "error",
-                    "message": "The request was discarded because it did not contain a valid CSRF token!",
-                }, 400
-        else:
-            return {
-                "status": "error",
-                "message": "The request was discarded because it did not contain a CSRF token!",
-            }, 400
-        feedback = data.get("feedback")
-        if feedback:
-            if len(feedback) > 10000:
-                return {
-                    "status": "error",
-                    "message": "Feedback length cannot exceed 10000 characters!",
-                }, 400
-            DATABASE["FEEDBACK"].insert_one(
-                {
-                    "feedback": feedback,
-                    "user": session.get("user_id"),
-                    "user_name": session.get("user_name"),
-                    "user_profile_pic": session.get("profile_pic"),
-                    "created_at": datetime.now(),
-                }
-            )
-            return {
-                "status": "success",
-                "message": "Thank you for your feedback, we will get back to you soon!",
-            }, 200
-        return {
-            "status": "error",
-            "message": "Please make sure all the fields are filled correctly!",
-        }, 400
-    return {
-        "status": "error",
-        "message": "You are not authorized to access this page!",
-    }, 401
-
-
-@app.route("/api/v1/users/<user_id>/unsubscribe", methods=["PUT"])
-def unsubscribe(user_id):
-    if request.method == "PUT":
-        if json.loads(request.data).get("csrf_token"):
-            if not check_crsf_token(json.loads(request.data).get("csrf_token")):
-                return {
-                    "status": "error",
-                    "message": "The request was discarded because it did not contain a valid CSRF token!",
-                }, 400
-        user = DATABASE["USERS"].find_one({"_id": int(user_id)})
-        if user:
-            DATABASE["USERS"].update_one(
-                {"_id": int(user_id)}, {"$set": {"newsletter_enabled": False}}
-            )
-            DATABASE["USERS"].update_one(
-                {"_id": int(user_id)}, {"$set": {"email": None}}
-            )
-            DATABASE["SYSTEM_MESSAGES"].insert_one(
-                {
-                    "user": int(user_id),
-                    "message": "You have been unsubscribed from the newsletter!",
-                    "created_at": datetime.now(),
-                }
-            )
-            return {
-                "status": "success",
-                "message": "Your subscription to the newsletter has been deactivated!",
-            }, 200
-        return {"status": "error", "message": "Invalid user ID!"}, 400
-    return {
-        "status": "error",
-        "message": "You are not authorized to access this page!",
-    }, 401
-
-
-@app.route("/api/v1/users/<user_id>/subscribe", methods=["PUT"])
-def subscribe(user_id):
-    if request.method == "PUT":
-        if json.loads(request.data).get("csrf_token"):
-            if not check_crsf_token(json.loads(request.data).get("csrf_token")):
-                return {
-                    "status": "error",
-                    "message": "The request was discarded because it did not contain a valid CSRF token!",
-                }, 400
-        if json.loads(request.data).get("csrf_token"):
-            if not check_crsf_token(json.loads(request.data).get("csrf_token")):
-                return {
-                    "status": "error",
-                    "message": "The request was discarded because it did not contain a valid CSRF token!",
-                }, 400
-
-        user = DATABASE["USERS"].find_one({"_id": int(user_id)})
-        if user:
-            DATABASE["USERS"].update_one(
-                {"_id": int(user_id)}, {"$set": {"newsletter_enabled": False}}
-            )
-            DATABASE["USERS"].update_one(
-                {"_id": int(user_id)},
-                {
-                    "$set": {
-                        "email": json.loads(request.data).get("email").strip().lower()
-                    }
-                },
-            )
-
-            user = DATABASE["USERS"].find_one({"_id": int(user_id)})
-
-            if not user:
-                return {
-                    "status": "error",
-                    "message": "The user associated with the given ID does not exist!",
-                }, 400
-
-            token = secrets.token_hex(16)
-
-            DATABASE["TOKENS"].insert_one(
-                {
-                    "user": int(user_id),
-                    "role": "newsletter-email-verification",
-                    "email": user["email"],
-                    "token": token,
-                    "created_at": datetime.now(),
-                }
-            )
-
-            if not send_email(
-                user_email=user["email"],
-                user_name=user["name"],
-                token=token,
-                type="newsletter_subscription_confirmation",
-            ):
-                return {
-                    "status": "error",
-                    "message": "Our systems are currently experiencing some issues, please try again later!",
-                }, 500
-
-            return {
-                "status": "success",
-                "message": "Please review your email for the verification link needed to activate your subscription",
-            }, 200
-        return {"status": "error", "message": "Invalid user ID!"}, 400
-    return {
-        "status": "error",
-        "message": "You are not authorized to access this page!",
-    }, 401
-
-
-@app.route("/api/v1/user/newsletter/subscribe", methods=["GET"])
-def newsletter_subscribe():
-    """
-    This functionverifies the email address of the user and activates the newsletter subscription.
-    """
-    token = request.args.get("token")
-    if token:
-        token = DATABASE["TOKENS"].find_one({"token": token})
-        if (
-            token
-            and token["role"] == "newsletter-email-verification"
-            and token["created_at"] + timedelta(hours=24) > datetime.now()
-        ):
-            DATABASE["USERS"].update_one(
-                {"_id": token["user"]}, {"$set": {"newsletter_enabled": True}}
-            )
-            DATABASE["USERS"].update_one(
-                {"_id": token["user"]}, {"$set": {"email": token["email"]}}
-            )
-            DATABASE["TOKENS"].delete_one({"token": token["token"]})
-            DATABASE["SYSTEM_MESSAGES"].insert_one(
-                {
-                    "user": token["user"],
-                    "message": "Your subscription to the newsletter has been activated!",
-                    "created_at": datetime.now(),
-                }
-            )
-            return redirect(url_for("profile_page"))
-        return abort(404)
-
-
-@app.route("/api/v1/users/<user_id>/export", methods=["GET"])
-def export_user_data(user_id):
-    if session.get("logged_in") and session.get("user_id") == int(user_id):
-        user = DATABASE["USERS"].find_one({"_id": int(user_id)})
-        if user:
-            comments = DATABASE["COMMENTS"].find({"commented_by": int(user_id)})
-            feedback = DATABASE["FEEDBACK"].find({"user": int(user_id)})
-            system_messages = DATABASE["SYSTEM_MESSAGES"].find({"user": int(user_id)})
-
-            # Without saving to a file
-            content = f"This is an export of your data from InkBloom | ProjectRexa Blog.\nThis file contains sensitive information, please do not share this file with anyone.\n\nUser ID - {user['_id']}\nUser Name - {user['name']}\nUser Profile Picture - {user['profile_pic']}\nUser Signup Method - {user['signup_method']}\nUser Signup Date - {user['created_at']}\nUser Last Updated Date - {user['last_updated_at']}\n\nComments - \n\n"
-
-            for comment in comments:
-                content += f"Comment ID - {comment['_id']}\nCommented On - {comment['created_at']}\nComment - {comment['comment']}\n\n"
-
-            content += "\n\nFeedback - \n\n"
-
-            for feedback in feedback:
-                content += f"Feedback ID - {feedback['_id']}\nFeedback Date - {feedback['created_at']}\nFeedback - {feedback['feedback']}\n\n"
-
-            content += "\n\nSystem Messages - \n\n"
-
-            for message in system_messages:
-                content += f"Message ID - {message['_id']}\nMessage Date - {message['created_at']}\nMessage - {message['message']}\n\n"
-
-            return Response(
-                content,
-                mimetype="text/plain",
+            image_upload_response = requests.post(
+                "https://api.cdn.om-mishra.com/v1/upload-file",
                 headers={
-                    "Content-Disposition": f"attachment;filename={user['name']}.txt"
+                    "X-Authorization": os.getenv("CDN_API_KEY"),
                 },
+                files={
+                    "file": base64.b64decode(image_data),
+                },
+                data={
+                    # Hashing the image content to generate a unique object path
+                    "object_path": f"blogs/media/{str(hash(image))[1:8]}.png",
+                },
+                timeout=5,
             )
 
-        return {
-            "status": "error",
-            "message": "Unable to find user associated with the given ID!",
-        }, 400
-    else:
-        return {
-            "status": "error",
-            "message": "You are not authorized to access this page!",
-        }, 401
-
-
-@app.route("/api/v1/users/<user_id>/delete", methods=["DELETE"])
-def delete_user(user_id):
-    if session.get("logged_in") and session.get("user_id") == int(user_id):
-        if json.loads(request.data).get("csrf_token"):
-            if not check_crsf_token(json.loads(request.data).get("csrf_token")):
-                return {
-                    "status": "error",
-                    "message": "The request was discarded because it did not contain a valid CSRF token!",
-                }, 400
-        user = DATABASE["USERS"].find_one({"_id": int(user_id)})
-        if user:
-            if session.get("user_id") != int(user_id):
-                return {
-                    "status": "error",
-                    "message": "You don't have the permission to delete this account!",
-                }, 401
-            DATABASE["USERS"].update_one(
-                {"_id": int(user_id)}, {"$set": {"deleted": True}}
-            )
-            DATABASE["COMMENTS"].update_many(
-                {"commented_by": int(user_id)},
-                {
-                    "$set": {
-                        "commented_by": "Deleted User",
-                        "user_name": "Deleted User",
-                        "user_profile_pic": "https://cdn.projectrexa.dedyn.io/projectrexa/blog/assets/3dbae37313bec7eac6117c9ddb8e2578",
+            # Check if the image upload was successful
+            if image_upload_response.status_code != 200:
+                return jsonify(
+                    {
+                        "status": "error",
+                        "message": "The blog creation failed, due to an invalid response from the Image Upload API!",
                     }
-                },
-            )
-            DATABASE["SYSTEM_MESSAGES"].insert_one(
+                )
+
+            # Append the URL of the uploaded image to the image_urls list
+            image_urls.append(image_upload_response.json().get("file_url"))
+
+        except Exception as e:
+            return jsonify(
                 {
-                    "user": int(user_id),
-                    "message": "The request to delete your account has been processed successfully!",
-                    "created_at": datetime.now(),
+                    "status": "error",
+                    "message": f"Image upload failed: {str(e)}",
                 }
             )
 
-            session.clear()
+    # Replace base64-encoded images in the blog content with their respective uploaded URLs
+    for index, (image_type, image_data) in enumerate(base64_images):
+        if index < len(image_urls):
+            blog_content = blog_content.replace(
+                f"data:image/{image_type};base64,{image_data}",
+                f"https://wsrv.nl/?url={image_urls[index]}&output=webp&quality=80&q=80&maxage=30d",
+            )
 
-            return {
-                "status": "success",
-                "message": "Your account has been deleted successfully!",
-            }, 200
-        return {
-            "status": "error",
-            "message": "Unable to find user associated with the given ID!",
-        }, 400
+    # Calculate the read time of the blog
+    blog_read_time = calculate_read_time(blog_content)
+
+    # Upload the cover image to the CDN
+    cover_upload_response = requests.post(
+        "https://api.cdn.om-mishra.com/v1/upload-file",
+        headers={
+            "X-Authorization": os.getenv("CDN_API_KEY"),
+        },
+        files={
+            "file": blog_cover,
+        },
+        data={
+            "object_path": f"blogs/covers/{str(uuid.uuid4())}.png",
+        },
+        timeout=5,
+    )
+
+    # Check if the cover image upload was successful
+    if cover_upload_response.status_code != 200:
+        return jsonify(
+            {
+                "status": "error",
+                "message": "The blog creation failed, due to an invalid response from the Cover Image Upload API!",
+            }
+        )
+
+    # Insert the blog into the database
+    data = {
+        "blog_id": str(uuid.uuid4()),
+        "blog_metadata": {
+            "title": blog_title,
+            "description": blog_description,
+            "slug": f"{blog_category}:-{blog_slug}-{str(secrets.token_hex(4))}",
+            "tags": blog_tags,
+            "category": blog_category,
+            "visibility": blog_visibility,
+            "featured": True if blog_featured else False,
+            "cover_url": cover_upload_response.json()["file_url"],
+            "read_time": blog_read_time,
+            "number_of_views": 0,
+            "created_at": datetime.now(),
+            "updated_at": datetime.now(),
+        },
+        "blog_content": blog_content,
+        "blog_author": {
+            "user_id": session.get("user").get("user_id"),
+        },
+    }
+
+    DATABASE["BLOGS"].insert_one(data)
+
+    return jsonify(
+        {
+            "status": "success",
+            "slug": data["blog_metadata"]["slug"],
+            "message": "The blog has been successfully created!",
+        }
+    )
+
+
+@app.route("/blog/<slug>", methods=["GET"])
+def blog(slug):
+    blog_data = DATABASE["BLOGS"].find_one({"blog_metadata.slug": slug})
+    if blog_data is None:
+        abort(404)
+    author_data = DATABASE["USERS"].find_one(
+        {"user_id": blog_data["blog_author"]["user_id"]}
+    )
+    comments = list(
+        DATABASE["COMMENTS"].aggregate(
+            [
+                {"$match": {"comment_metadata.blog_id": blog_data["blog_id"]}},
+                {"$sort": {"_id": -1}},
+                {
+                    "$lookup": {
+                        "from": "USERS",
+                        "localField": "comment_author.user_id",
+                        "foreignField": "user_id",
+                        "as": "author_details",
+                    }
+                },
+                {"$unwind": "$author_details"},
+            ]
+        )
+    )
+    DATABASE["BLOGS"].update_one(
+        {"blog_id": blog_data["blog_id"]},
+        {"$set": {"blog_metadata.number_of_views": blog_data["blog_metadata"]["number_of_views"] + 1}},
+    )
+    return render_template("blog.html", blog=blog_data, author=author_data, comments=comments)
+
+
+@app.route("/blog/<id>/edit", methods=["GET"])
+def edit_blog(id):
+    if (
+        session.get("user") is None
+        and session.get("user").get("username") != "om-mishra7"
+    ):
+        return redirect(url_for("login"))
+    blog_data = DATABASE["BLOGS"].find_one({"blog_id": id})
+    if blog_data is None:
+        abort(404)
+    blog_data["blog_metadata"]["tags"] = ", ".join(blog_data["blog_metadata"]["tags"])
+    blog_data["blog_metadata"]["slug"] = blog_data["blog_metadata"]["slug"].split(":-")[
+        1
+    ]
+    return render_template("edit_blog.html", blog=blog_data)
+
+
+@app.route("/api/blog/<id>", methods=["PUT"])
+def update_blog(id):
+    if (
+        session.get("user") is None
+        and session.get("user").get("username") != "om-mishra7"
+    ):
+        return redirect(url_for("login"))
+    blog_data = DATABASE["BLOGS"].find_one({"blog_id": id})
+    if blog_data is None:
+        abort(404)
+    blog_title = request.form.get("title")
+    blog_description = request.form.get("description")
+    blog_slug = request.form.get("slug").lower()
+    blog_tags = [
+        tag.strip() for tag in request.form.get("tags").lower().strip().split(",")
+    ]
+    blog_category = request.form.get("category").lower()
+    blog_visibility = request.form.get("visibility").lower()
+    blog_featured = request.form.get("featured")
+    blog_cover = request.files.get("cover")
+    blog_content = request.form.get("content")
+
+    if (
+        not blog_title
+        or not blog_description
+        or not blog_slug
+        or not blog_tags
+        or not blog_category
+        or not blog_visibility
+        or not blog_content
+    ):
+        return jsonify(
+            {
+                "status": "error",
+                "message": f"The following fields are required: {'Title' if not blog_title else ''} {'Description' if not blog_description else ''} {'Slug' if not blog_slug else ''} {'Tags' if not blog_tags else ''} {'Category' if not blog_category else ''} {'Visibility' if not blog_visibility else ''} {'Content' if not blog_content else ''}",
+            }
+        )
+
+    # All images in the content are base64 encoded, so we need to extract them and upload them to the CDN and replace the base64 encoded images with the CDN URLs
+
+    image_urls = []
+
+    # Find all base64-encoded images in the blog content
+    base64_images = re.findall(
+        r'<img src="data:image/([^;]+);base64,([^"]+)"', blog_content
+    )
+
+    # Loop through each base64-encoded image found
+    for image_type, image_data in base64_images:
+        # Decode the base64 image data
+        try:
+            image = base64.b64decode(image_data)
+        except base64.binascii.Error:
+            return jsonify(
+                {
+                    "status": "error",
+                    "message": "Invalid base64 image data found!",
+                }
+            )
+
+        # Send a POST request to upload the image to the CDN
+        try:
+            image_upload_response = requests.post(
+                "https://api.cdn.om-mishra.com/v1/upload-file",
+                headers={
+                    "X-Authorization": os.getenv("CDN_API_KEY"),
+                },
+                files={
+                    "file": base64.b64decode(image_data),
+                },
+                data={
+                    # Hashing the image content to generate a unique object path
+                    "object_path": f"blogs/media/{str(hash(image))[1:8]}.png",
+                },
+                timeout=5,
+            )
+
+            # Check if the image upload was successful
+            if image_upload_response.status_code != 200:
+                return jsonify(
+                    {
+                        "status": "error",
+                        "message": "The blog update failed, due to an invalid response from the Image Upload API!",
+                    }
+                )
+
+            # Append the URL of the uploaded image to the image_urls list
+            image_urls.append(image_upload_response.json().get("file_url"))
+
+        except Exception as e:
+            return jsonify(
+                {
+                    "status": "error",
+                    "message": f"Image upload failed: {str(e)}",
+                }
+            )
+
+    # Replace base64-encoded images in the blog content with their respective uploaded URLs
+
+    for index, (image_type, image_data) in enumerate(base64_images):
+        if index < len(image_urls):
+            blog_content = blog_content.replace(
+                f"data:image/{image_type};base64,{image_data}",
+                f"https://wsrv.nl/?url={image_urls[index]}&output=webp&quality=80&q=80&maxage=30d",
+            )
+
+    # Calculate the read time of the blog
+    blog_read_time = calculate_read_time(blog_content)
+
+    # Upload the cover image to the CDN
+    if blog_cover:
+        cover_upload_response = requests.post(
+            "https://api.cdn.om-mishra.com/v1/upload-file",
+            headers={
+                "X-Authorization": os.getenv("CDN_API_KEY"),
+            },
+            files={
+                "file": blog_cover,
+            },
+            data={
+                "object_path": f"blogs/covers/{str(uuid.uuid4())}.png",
+            },
+            timeout=5,
+        )
+
+        # Check if the cover image upload was successful
+        if cover_upload_response.status_code != 200:
+            return jsonify(
+                {
+                    "status": "error",
+                    "message": "The blog update failed, due to an invalid response from the Cover Image Upload API!",
+                }
+            )
+
+        # Update the blog cover URL
+        blog_data["blog_metadata"]["cover_url"] = cover_upload_response.json()[
+            "file_url"
+        ]
+
+    # Update the blog data
+    blog_data["blog_metadata"]["title"] = blog_title
+    blog_data["blog_metadata"]["description"] = blog_description
+    blog_data["blog_metadata"]["slug"] = f"{blog_category}:-{blog_slug}"
+    blog_data["blog_metadata"]["tags"] = [
+        tag.strip() for tag in request.form.get("tags").lower().strip().split(",")
+    ]
+    blog_data["blog_metadata"]["category"] = blog_category
+    blog_data["blog_metadata"]["visibility"] = blog_visibility
+    blog_data["blog_metadata"]["featured"] = True if blog_featured else False
+    blog_data["blog_metadata"]["read_time"] = blog_read_time
+    blog_data["blog_metadata"]["updated_at"] = datetime.now()
+    blog_data["blog_content"] = blog_content
+
+    DATABASE["BLOGS"].update_one({"blog_id": id}, {"$set": blog_data})
+
+    return jsonify(
+        {
+            "status": "success",
+            "message": "The blog has been successfully updated!",
+            "slug": blog_data["blog_metadata"]["slug"],
+        }
+    )
+
+@app.route("/api/blog/<id>/comment", methods=["POST"])
+def create_comment(id):
+    blog_data = DATABASE["BLOGS"].find_one({"blog_id": id})
+    if blog_data is None:
+        abort(404)
+    comment_content = request.form.get("content")
+    if not comment_content:
+        return jsonify(
+            {
+                "status": "error",
+                "message": "The comment content is required!",
+            }
+        )
+    comment_data = {
+        "comment_id": str(uuid.uuid4()),
+        "comment_content": comment_content,
+        "comment_author": {
+            "user_id": session.get("user").get("user_id"),
+        },
+        "comment_metadata": {
+            "created_at": datetime.now(),
+            "blog_id": blog_data["blog_id"],
+        },
+    }
+    DATABASE["COMMENTS"].insert_one(comment_data)
+
+    return jsonify(
+        {
+            "status": "success",
+            "message": "The comment has been successfully created!",
+        }
+    )
+
+
+
+# Application Auth Routes
+
+
+@app.route("/auth/login", methods=["GET"])
+def login():
+    session["auth_state"] = secrets.token_hex(16)
+    return render_template(
+        "auth/login.html",
+        redirect_url=f"https://github.com/login/oauth/authorize?client_id={os.getenv('GITHUB_CLIENT_ID')}&redirect_uri={os.getenv('GITHUB_REDIRECT_URI')}&scope=user&state={session['auth_state']}",
+    )
+
+
+@app.route("/auth/logout", methods=["GET"])
+def logout():
+    session.clear()
+    return redirect(url_for("index"))
+
+
+@app.route("/api/auth/github/callback", methods=["GET"])
+def github_callback():
+    code = request.args.get("code")
+    if not code:
+        return redirect(
+            url_for(
+                "index",
+                message="The authentication attempt failed, due to missing code parameter!",
+            )
+        )
+
+    if request.args.get("state") != session.get("auth_state"):
+        return redirect(
+            url_for(
+                "index",
+                message="The authentication attempt failed, due to mismatched state parameter!",
+            )
+        )
+
+    github_response = requests.post(
+        "https://github.com/login/oauth/access_token",
+        headers={
+            "Accept": "application/json",
+        },
+        data={
+            "client_id": os.getenv("GITHUB_CLIENT_ID"),
+            "client_secret": os.getenv("GITHUB_CLIENT_SECRET"),
+            "code": code,
+            "redirect_uri": os.getenv("GITHUB_REDIRECT_URI"),
+        },
+    )
+
+    if github_response.status_code != 200:
+        return redirect(
+            url_for(
+                "index",
+                message="The authentication attempt failed, due to invalid response from GitHub!",
+            )
+        )
+
+    github_response_data = github_response.json()
+
+    if "error" in github_response_data:
+        return redirect(
+            url_for(
+                "index",
+                message=f"The authentication attempt failed, due to error: {github_response_data['error']}!",
+            )
+        )
+
+    github_user_response = requests.get(
+        "https://api.github.com/user",
+        headers={
+            "Accept": "application/json",
+            "Authorization": f"token {github_response_data['access_token']}",
+        },
+    )
+
+    if github_user_response.status_code != 200:
+        return redirect(
+            url_for(
+                "index",
+                message="The authentication attempt failed, due to invalid response from GitHub User API!",
+            )
+        )
+
+    github_user_data = github_user_response.json()
+
+    if (
+        DATABASE["USERS"].find_one({"account_info.oauth_id": github_user_data["id"]})
+        is None
+    ):
+        user_id = str(uuid.uuid4())
+        DATABASE["USERS"].insert_one(
+            {
+                "user_id": user_id,
+                "user_info": {
+                    "username": github_user_data["login"].lower(),
+                    "name": github_user_data["name"].title(),
+                    "avatar_url": f"https://cdn.om-mishra.com/avatars/{user_id}.png",
+                },
+                "account_info": {
+                    "oauth_provider": "github",
+                    "oauth_id": github_user_data["id"],
+                    "created_at": datetime.now(),
+                    "last_login": datetime.now(),
+                    "is_active": True,
+                },
+            }
+        )
     else:
-        return {
-            "status": "error",
-            "message": "You are not authorized to access this page!",
-        }, 401
+        user_id = DATABASE["USERS"].find_one(
+            {"account_info.oauth_id": github_user_data["id"]}
+        )["user_id"]
+
+        DATABASE["USERS"].update_one(
+            {"account_info.oauth_id": github_user_data["id"]},
+            {"$set": {"account_info.last_login": datetime.now()}},
+        )
+
+    user_avatar_upload_response = requests.post(
+        "https://api.cdn.om-mishra.com/v1/upload-file",
+        headers={
+            "X-Authorization": os.getenv("CDN_API_KEY"),
+        },
+        files={
+            "file": requests.get(github_user_data["avatar_url"]).content,
+        },
+        data={
+            "object_path": f"avatars/{user_id}.png",
+        },
+        timeout=5,
+    )
+
+    if user_avatar_upload_response.status_code != 200:
+        return redirect(
+            url_for(
+                "index",
+                message="The authentication attempt failed, due to invalid response from Avatar Upload API!",
+            )
+        )
+
+    user_info = DATABASE["USERS"].find_one({"user_id": user_id})
+
+    session["user"] = {
+        "user_id": user_id,
+        "username": user_info["user_info"]["username"],
+        "name": user_info["user_info"]["name"],
+        "avatar_url": f"{user_info['user_info']['avatar_url']}",
+    }
+
+    session["is_authenticated"] = True
+
+    return redirect(url_for("index"))
 
 
-# Error Handlers
+# Application Search Routes
+
+@app.route("/api/search", methods=["GET"])
+def search_api():
+    query = request.args.get("query")
+    limit = 5
+    if not query:
+        return jsonify(
+            {
+                "status": "error",
+                "message": "The search query is required!",
+            }
+        )
+
+    # Escape special characters in the query
+    escaped_query = re.escape(query.strip().replace("%20", " "))
+    fuzzy_query = f".*{escaped_query}.*"
+
+    pipeline = [
+        {
+            "$match": {
+                "$or": [
+                    {"blog_metadata.title": {"$regex": fuzzy_query, "$options": "i"}},
+                    {"blog_metadata.description": {"$regex": fuzzy_query, "$options": "i"}},
+                    {"blog_metadata.tags.tag_name": {"$regex": fuzzy_query, "$options": "i"}},
+                    {"blog_metadata.category": {"$regex": fuzzy_query, "$options": "i"}},
+                ]
+            }
+        },
+        {
+            "$group": {
+                "_id": "$blog_id",
+                "blog_id": {"$first": "$blog_id"},
+                "blog_metadata": {"$first": "$blog_metadata"},
+            }
+        },
+        {
+            "$limit": limit
+        },
+        {
+            "$project": {
+                "_id": 0,
+                "blog_id": 1,
+                "blog_metadata": 1,
+            }
+        }
+    ]
+
+    search_results = list(DATABASE["BLOGS"].aggregate(pipeline))
+
+    return jsonify(
+        {
+            "status": "success",
+            "results": search_results,
+        }
+    )
+
+@app.route("/tags/<tag>", methods=["GET"])
+def tags(tag):
+    return redirect(url_for("search", tag=tag))
+
+@app.route("/category/<category>", methods=["GET"])
+def category(category):
+    return redirect(url_for("search", category=category))
+
+@app.route("/search", methods=["GET"])
+def search():
+    tags = request.args.getlist("tags")
+    category = request.args.get("category")
+    publish_date_lt = request.args.get("publish_date_lt")
+    publish_date_gt = request.args.get("publish_date_gt")
+    publish_date_lte = request.args.get("publish_date_lte")
+    publish_date_gte = request.args.get("publish_date_gte")
+    views_lt = request.args.get("views_lt", type=int)
+    views_gt = request.args.get("views_gt", type=int)
+    views_lte = request.args.get("views_lte", type=int)
+    views_gte = request.args.get("views_gte", type=int)
+
+    # Building the match stage
+    match_stage = {"$match": {"blog_metadata.visibility": "public"}}  # Consider only public blog posts
+    
+    if tags:
+        match_stage["$match"]["blog_metadata.tags"] = {"$in": tags}
+    
+    if category:
+        match_stage["$match"]["blog_metadata.category"] = category
+    
+    if publish_date_lt:
+        if "blog_metadata.publish_date" not in match_stage["$match"]:
+            match_stage["$match"]["blog_metadata.publish_date"] = {}
+        match_stage["$match"]["blog_metadata.publish_date"]["$lt"] = datetime.strptime(publish_date_lt, "%Y-%m-%d")
+    
+    if publish_date_gt:
+        if "blog_metadata.publish_date" not in match_stage["$match"]:
+            match_stage["$match"]["blog_metadata.publish_date"] = {}
+        match_stage["$match"]["blog_metadata.publish_date"]["$gt"] = datetime.strptime(publish_date_gt, "%Y-%m-%d")
+    
+    if publish_date_lte:
+        if "blog_metadata.publish_date" not in match_stage["$match"]:
+            match_stage["$match"]["blog_metadata.publish_date"] = {}
+        match_stage["$match"]["blog_metadata.publish_date"]["$lte"] = datetime.strptime(publish_date_lte, "%Y-%m-%d")
+    
+    if publish_date_gte:
+        if "blog_metadata.publish_date" not in match_stage["$match"]:
+            match_stage["$match"]["blog_metadata.publish_date"] = {}
+        match_stage["$match"]["blog_metadata.publish_date"]["$gte"] = datetime.strptime(publish_date_gte, "%Y-%m-%d")
+    
+    if views_lt is not None:
+        if "blog_metadata.views" not in match_stage["$match"]:
+            match_stage["$match"]["blog_metadata.views"] = {}
+        match_stage["$match"]["blog_metadata.views"]["$lt"] = views_lt
+    
+    if views_gt is not None:
+        if "blog_metadata.views" not in match_stage["$match"]:
+            match_stage["$match"]["blog_metadata.views"] = {}
+        match_stage["$match"]["blog_metadata.views"]["$gt"] = views_gt
+    
+    if views_lte is not None:
+        if "blog_metadata.views" not in match_stage["$match"]:
+            match_stage["$match"]["blog_metadata.views"] = {}
+        match_stage["$match"]["blog_metadata.views"]["$lte"] = views_lte
+    
+    if views_gte is not None:
+        if "blog_metadata.views" not in match_stage["$match"]:
+            match_stage["$match"]["blog_metadata.views"] = {}
+        match_stage["$match"]["blog_metadata.views"]["$gte"] = views_gte
+
+    # Building the group stage
+    lookup_stage = {
+        "$lookup": {
+            "from": "USERS",
+            "localField": "blog_author.user_id",
+            "foreignField": "user_id",
+            "as": "author_details"
+        }
+    }
+
+    # Unwind the author_details array
+    unwind_stage = {
+        "$unwind": "$author_details"
+    }
+
+    # Add author details into each blog record
+    add_fields_stage = {
+        "$addFields": {
+            "author_details": "$author_details"
+        }
+    }
+
+    # Building the group stage
+    group_stage = {
+        "$group": {
+            "_id": "$blog_metadata.category",
+            "averageViews": {"$avg": "$blog_metadata.number_of_views"},
+            "totalBlogs": {"$sum": 1},
+            "blogs": {"$push": "$$ROOT"}
+        }
+    }
+
+    # Building the sort stage
+    sort_stage = {
+        "$sort": {"averageViews": -1}  # Sort by average views in descending order
+    }
+
+    # Projecting the final output
+    projection_stage = {
+        "$project": {
+            "_id": 0,
+            "category": "$_id",
+            "averageViews": 1,
+            "totalBlogs": 1,
+            "blogs": {
+                "$map": {
+                    "input": "$blogs",
+                    "as": "blog",
+                    "in": {
+                        "blog_id": "$$blog.blog_id",
+                        "blog_metadata": "$$blog.blog_metadata",
+                        "author_details": "$$blog.author_details"
+                    }
+                }
+            }
+        }
+    }
+
+    # Constructing the pipeline
+    pipeline = [
+        match_stage,
+        lookup_stage,
+        unwind_stage,
+        add_fields_stage,
+        group_stage,
+        sort_stage,
+        projection_stage
+    ]
+
+    # Running the aggregation pipeline
+    search_results = list(DATABASE["BLOGS"].aggregate(pipeline))
+
+    return render_template("search.html", search_results=search_results, tags=tags, category=category, publish_date_lt=publish_date_lt, publish_date_gt=publish_date_gt, publish_date_lte=publish_date_lte, publish_date_gte=publish_date_gte, views_lt=views_lt, views_gt=views_gt, views_lte=views_lte, views_gte=views_gte)
+
 
 
 @app.errorhandler(429)
@@ -1391,4 +1012,4 @@ def handle_errors(e):
 
 
 if __name__ == "__main__":
-    app.run(port=8000)
+    app.run(port=8000, debug=True)

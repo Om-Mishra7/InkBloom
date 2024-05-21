@@ -71,7 +71,6 @@ main {
 
 .blog-author-name {
   font-size: .9rem;
-  color: #fff;
 }
 
 .blog-date {
@@ -84,20 +83,25 @@ main {
   flex-direction: column;
   align-items: flex-start;
   justify-content: flex-start;
-  gap: 1em;
   width: 100%;
   text-align: left;
   padding: 0 10px;
 }
 
 .blog-content h1, h2, h3, h4, h5, h6 {
-  padding-top: 20px;
+  margin-top: 20px;
   color: #fff;
   font-size: 1.5rem;
 }
 
 .blog-content p {
   font-size: 1rem;
+  width: 100%;
+  margin-top: 10px;
+}
+
+.blog-content a {
+  color: #ffdf90 !important;
 }
 
 .blog-cover-image {
@@ -228,7 +232,7 @@ textarea {
   border-radius: 5px;
   border: 1px solid #aaa;
   margin-bottom: 1rem;
-  background-color: #2c2c2c;
+  background-color: #1f1b13;
   color: #fff;
 }
 
@@ -247,13 +251,14 @@ textarea {
 }
 
 .comment-form-footer button {
-  padding: 10px 20px;
+  padding: 15px 20px;
   border-radius: 5px;
   border: none;
-  background-color: #2c2c2c;
+  background-color: #1f1b13;
   color: #fff;
-  font-size: 0.9rem;
   cursor: pointer;
+  font: inherit;
+  font-size: 0.9rem;
 }
 
 .comment-form-footer p {
@@ -280,7 +285,7 @@ textarea {
   justify-content: flex-start;
   gap: 5px;
   border-radius: 5px;
-  background-color: #2c2c2c;
+  background-color: #1f1b13;
 }
 
 .blog-comment-author {
@@ -399,18 +404,120 @@ textarea {
 }
 
 .blog-actions button {
-  padding: 10px 20px;
+  padding: 15px 20px;
   border-radius: 5px;
   border: none;
-  background-color: #2c2c2c;
+  background-color: #1f1b13;
   color: #fff;
   font-size: 0.9rem;
   cursor: pointer;
+  font: inherit;
 }
 
-.delete-blog {
-  background-color: #bb2124 !important;
+
+/* Text Alignment */
+.ql-align-left {
+  text-align: left;
 }
+
+.ql-align-center {
+  text-align: center;
+}
+
+.ql-align-right {
+  text-align: right;
+}
+
+.ql-align-justify {
+  text-align: justify;
+}
+
+/* Text Direction */
+.ql-direction-rtl {
+  direction: rtl;
+}
+
+/* Font Style */
+.ql-font-serif {
+  font-family: serif;
+}
+
+.ql-font-monospace {
+  font-family: monospace;
+}
+
+/* Font Size */
+.ql-size-small {
+  font-size: 0.75em;
+}
+
+.ql-size-large {
+  font-size: 1.5em;
+}
+
+.ql-size-huge {
+  font-size: 2.5em;
+}
+
+/* Formatting */
+.ql-bold {
+  font-weight: bold;
+}
+
+.ql-italic {
+  font-style: italic;
+}
+
+.ql-underline {
+  text-decoration: underline;
+}
+
+.ql-strike {
+  text-decoration: line-through;
+}
+
+/* List Formatting */
+.ql-list-ordered {
+  list-style-type: decimal;
+}
+
+.ql-list-bullet {
+  list-style-type: disc;
+}
+
+/* Code Block */
+.ql-code-block {
+  background-color: #f0f0f0;
+  font-family: monospace;
+  padding: 10px;
+  border-radius: 5px;
+}
+
+/* Blockquote */
+.ql-blockquote {
+  border-left: 4px solid #ccc;
+  margin: 1.5em 10px;
+  padding: 0.5em 10px;
+  color: #555;
+}
+
+/* Indentation */
+.ql-indent-1 {
+  padding-left: 3em;
+}
+
+.ql-indent-2 {
+  padding-left: 6em;
+}
+
+.ql-indent-3 {
+  padding-left: 9em;
+}
+
+.ql-indent-4 {
+  padding-left: 12em;
+}
+
 
 @media screen and (max-width: 800px) {
   main {

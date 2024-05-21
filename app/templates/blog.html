@@ -1,132 +1,106 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    {% include 'partials/header.html' %}
-    <title>{{title}} - InkBloom|ProjectRexa</title>
-    <link rel="stylesheet" href="/static/css/blog.css" />
-    <script src="/static/js/blog.js" defer></script>
-  </head>
-  <body>
-    {% include 'partials/navbar.html' %}
-    <link
-      rel="stylesheet"
-      href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/monokai-sublime.min.css"
-    />
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" integrity="sha512-D9gUyxqja7hBtkWpPWGt9wfbfaMGVt9gnyCvYa+jojwwPHLCzUm5i8rpk7vD7wNee9bA35eYIjobYPaQuKS1MQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-    <main>
-      <div class="blog-meta">
-        <h1 class="blog-title">{{ blog.title }}</h1>
-        <p class="blog-summary">{{ blog.summary }}</p>
-        <div class="blog-author">
-          <img
-          src="//wsrv.nl?url={{blog.authour_profile_pic}}&w=50&h=50&maxage=31d&q=75&output=webp"            
-            alt="{{ blog.authour_name }}"
-          />
-          <div class="blog-author-info">
-            <p class="blog-author-name">{{ blog.authour_name }}</p>
-            <p class="blog-date">
-              {{(blog.created_at | string) | format_timestamp}}
-            </p>
-          </div>
-          {% if session['admin'] %}
-          <div class="blog-actions">
-            <button class="edit-blog" onclick="window.location.replace('/admin/blogs/edit/{{ blog._id }}')">Edit</button>
-            <button class="delete-blog" onclick="deleteBlog('{{ blog._id }}')">Delete</button>
-          </div>
+
+<head>
+  {% include 'partials/header.html' %}
+  <title>{{ blog.blog_metadata.title }}</title>
+  <link rel="stylesheet" href="/static/css/blog.css" />
+  <script src="/static/js/blog.js" defer></script>
+</head>
+
+<body>
+  {% include 'partials/navbar.html' %}
+  <link rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/monokai-sublime.min.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"
+    integrity="sha512-D9gUyxqja7hBtkWpPWGt9wfbfaMGVt9gnyCvYa+jojwwPHLCzUm5i8rpk7vD7wNee9bA35eYIjobYPaQuKS1MQ=="
+    crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+  <link href="https://cdn.jsdelivr.net/npm/quill@2.0.2/dist/quill.snow.css" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/quill@2.0.2/dist/quill.js"></script>
+  <main>
+    <div class="blog-meta">
+      <h1 class="blog-title">{{ blog.blog_metadata.title }}</h1>
+      <p class="blog-summary">{{ blog.blog_metadata.description }}</p>
+      <div class="blog-author">
+        <img src="//wsrv.nl?url={{author.user_info.avatar_url}}&w=50&h=50&maxage=31d&q=75&output=webp"
+          alt="{{ author.user_info.name }}" />
+        <div class="blog-author-info">
+          <a href="https://om-mishra.com" target="_blank" rel="noopener noreferrer">
+            <p class="blog-author-name">{{ author.user_info.name }}</p>
+          </a>
+          <p class="blog-date">
+            {{(blog.blog_metadata.created_at | string) | format_timestamp}}
+          </p>
         </div>
-        {% endif %}
-      </div>
-      <div class="blog-content">
-        <div class="blog-cover-image">
-          
-          <img src="//wsrv.nl?url={{blog.cover_image}}&maxage=31d&q=50&h=500&w=500&output=webp" alt="{{ blog.title }}" />
-        </div>
-        {{ blog.content | safe }}
-      </div>
-      {% if suggested_blogs %}
-      <div class="blog-suggested-blogs">
-        <h2>Suggested Blogs</h2>
-        <div class="blog-suggested-blogs-list">
-          {% for blog in suggested_blogs %}
-          <div class="blog-suggested-blog">
-            <a href="/blogs/{{ blog.slug }}">
-              <div class="blog-suggested-blog-cover-image">
-                <img src="//wsrv.nl?url={{ blog.cover_image }}&maxage=31d&q=50&h=200&w=200&output=webp" alt="{{ blog.title }}" />
-              </div>
-              <div class="blog-suggested-blog-details">
-                <p class="blog-suggested-blog-title">{{ blog.title }}</p>
-              </div>
-            </a>
-          </div>
-          {% endfor %}
+        {% if session.get('user') is not none and session['user']['user_id'] == author.user_id %}
+        <div class="blog-actions">
+          <button class="edit-blog" onclick="window.location.replace('/blog/{{ blog.blog_id}}/edit')">Edit Blog</button>
         </div>
       </div>
       {% endif %}
-      <div class="blog-comments">
-        <div class="blog-comments-header">
-          <h2>Comments</h2>
-          <p>{{ blog.comments_count }} Comments</p>
-        </div>
-        {% if session['logged_in'] %}
-          {% if session['blocked'] %}
-          <div class="blog-authentication-notice danger">
-            <p class="comment-form-login">This account has been banned from commenting, due to violation of community guidelines.</p>
-          </div>
-          {% else %}
-          <div class="blog-comment-form">
-            <form action="/blog/{{ blog._id }}/comment" method="POST" id="comment-form">
-              <input type="hidden" name="csrf_token" value="{{ csrf_token }}" id="csrf_token" />
-              <textarea
-                name="content"
-                id="comment-content"
-                placeholder="By posting a comment, you agree to the community guidelines and that your account name and profile photo will be displayed with your comment.              "
-              ></textarea>
-              <div class="comment-form-footer">
-              <button type="submit">Comment</button>
-              </div>
-            </form>
-          </div>
-          {% endif %}
+    </div>
+    <div class="blog-content">
+      <div class="blog-cover-image">
+
+        <img src="//wsrv.nl?url={{blog.blog_metadata.cover_url}}&maxage=31d&q=50&h=500&w=500&output=webp"
+          alt="{{ blog.blog_metadata.title }}" />
+      </div>
+      {{ blog.blog_content | safe }}
+    </div>
+    <div class="blog-comments">
+      <div class="blog-comments-header">
+        <h2>Comments</h2>
+        {% if comments | length == 0 %}
+        <p class="no-comments">No comments yet. Be the first to comment!</p>
         {% else %}
-        <div class="blog-authentication-notice">
-          <p class="comment-form-login">You need to be <a onclick="signIn();">authenticated</a> to comment.</p>
-        </div>
+        <p>{{ comments | length }} {{ 'comment' if comments | length == 1 else 'comments' }}</p>
         {% endif %}
-         <div class="blog-comments-list">
-          {% for comment in comments %}
-            {% if comment.user_role == 'admin' %}
-            <div class="blog-comment moderator-comment" data-id = "{{ comment._id }}" data-user-id = "{{ comment.commented_by }}">
-              {% else %}
-              <div class="blog-comment">
-              {% endif %}
-            
-              <div class="blog-comment-author">
-                <img
-                  src="//wsrv.nl?url={{ comment.user_profile_pic }}&w=20&h=20&maxage=31d&q=75&output=webp"
-                  alt="{{ comment.user_name }}"
-                />
-                <div class="blog-comment-author-info">
-                  <p class="blog-comment-author-name">{{ comment.user_name }}</p>
-                  <p class="blog-comment-date">
-                    {{(comment.created_at | string) | format_timestamp}}
-                  </p>
-                </div>
-              </div>
-              <p class="blog-comment-content">{{ comment.comment}}</p>
-              {% if session['admin'] %}
-              <div class="blog-comment-actions">
-                <button class="delete-comment" onclick="deleteComment('{{ comment._id }}')" data-comment-id = "{{ comment._id }}">Delete</button>
-                {% if comment.user_role != 'admin' %}
-                <button class="block-user" onclick="blockUser('{{ comment.commented_by }}')" data-user-id = "{{ comment.commented_by }}">Block User</button>
-                {% endif %}
-              </div>
-              {% endif %}
-            </div>
-          {% endfor %}
+      </div>
+      {% if session['is_authenticated'] %}
+      <div class="blog-comment-form">
+        <textarea name="content" id="comment-content"
+          placeholder="By posting a comment, you agree to the community guidelines and that your account name and profile photo will be displayed with your comment."></textarea>
+        <div class="comment-form-footer">
+          <button type="submit" id="submit-comment" onclick="submitComment('{{ blog.blog_id }}')">Post Comment</button>
         </div>
       </div>
+      {% else %}
+      <div class="blog-authentication-notice">
+        <p class="comment-form-login">Please <a href="/auth/login">login</a> to comment on this blog.</p>
+      </div>
+      {% endif %}
+      <div class="blog-comments-list">
+        {% for comment in comments %}
+        <div class="blog-comment">
 
-    </main>
-    {% include 'partials/footer.html' %}
-  </body>
+          <div class="blog-comment-author">
+            <img
+              src="//wsrv.nl?url={{ comment.author_details.user_info.avatar_url }}&w=20&h=20&maxage=31d&q=5&output=webp"
+              alt="{{ comment.author_details.name }}" />
+            <div class="blog-comment-author-info">
+              {% if comment.author_details.user_info.username == 'om-mishra7' %}
+              <p class="blog-comment-author-name">{{ comment.author_details.user_info.name }}</p>
+              <svg xmlns="http://www.w3.org/2000/svg" height="15px" viewBox="0 -960 960 960" width="15px"
+                fill="#ffdf90" title="Moderator" class="bi bi-shield-fill-check">
+                <path
+                  d="M480-80q-139-35-229.5-159.5T160-516v-244l320-120 320 120v244q0 152-90.5 276.5T480-80Zm0-84q97-30 162-118.5T718-480H480v-315l-240 90v207q0 7 2 18h238v316Z" title="Moderator" />
+              </svg>
+              {% else %}
+              <p class="blog-comment-author-name">{{ comment.author_details.user_info.name }}</p>
+              {% endif %}
+              <p class="blog-comment-date">
+                {{(comment.comment_metadata.created_at | string) | format_timestamp}}
+              </p>
+            </div>
+          </div>
+          <p class="blog-comment-content">{{ comment.comment_content }}</p>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+
+  </main>
+  {% include 'partials/footer.html' %}
+</body>
+
 </html>

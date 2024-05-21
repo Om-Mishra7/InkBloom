@@ -1,172 +1,130 @@
-body {
-	font-family: 'Roboto', sans-serif;
+main {
+	margin-top: 60px;
 	display: flex;
 	flex-direction: column;
 	align-items: center;
-	justify-content: center;
-	margin: 0;
-	padding: 0;
-}
-
-.editor {
-	border: 1px rgb(52, 56, 58);
-	width: 100%;
-}
-
-.form-top {
-	display: flex;
-	width: 100%;
-	flex-direction: row;
-	flex-wrap: wrap;
-	justify-content: space-between;
-	align-items: center;
+	justify-content: flex-start;
+	height: 100%;
+	padding: 20px 60px;
 	gap: 20px;
-	flex: 1;
 }
 
-form {
+.input-container {
 	display: flex;
-	width: 60%;
 	flex-direction: column;
+	align-items: flex-start;
+	justify-content: flex-start;
+	width: 100%;
+	gap: 10px;
+}
+
+.input-container div {
+	display: flex;
+	align-items: center;
+	justify-content: flex-start;
+	gap: 20px;
+}
+
+.input-container div div {
+	display: flex;
 	align-items: center;
 	justify-content: center;
-	margin-bottom: 50px;
-	gap: 20px;
+	width: max-content;
 }
 
-form input {
-	width: 47%;
-	height: 45px;
-	padding: 0 15px;
-	border: 1px solid rgb(52, 56, 58);
-	font: inherit;
-	border-radius: 5px;
-}
-
-form input:focus {
-	outline: none;
-}
-
-form textarea {
-	width: 100%;
-	height: 150px;
-	padding: 15px;
-	border: 1px solid rgb(52, 56, 58);
-	resize: none;
-	font: inherit;
-	border-radius: 5px;
-}
-
-form textarea:focus {
-	outline: none;
-}
-
-form .form-top {
-	width: 100%;
-}
-
-.form-bottom {
-	width: 100%;
-	display: flex;
-	flex-direction: row;
-	gap: 20px;
-}
-
-input[type='submit'] {
-	width: 100%;
-	height: 45px;
-	border: none;
-	background-color: rgb(52, 56, 58);
-	color: white;
-	font: inherit;
-	cursor: pointer;
-	border-radius: 5px;
-}
-
-input[type='submit']:hover {
-	background-color: rgb(52, 56, 58);
-}
-
-input[type='file'] {
-	height: 45px;
-	font: inherit;
-	border: none;
-	border-radius: 5px;
-}
-
-select {
-	width: 47%;
-	height: 45px;
-	padding: 0 0 0 10px;
-	border: 1px solid rgb(52, 56, 58); 
-	font: inherit;
-	margin: 0;
-	border-radius: 5px;
-}
-
-select:focus {
-	outline: none;
-}
-
-select option {
-	font: inherit;
-}
-
-.container {
-	width: 47%;
-	margin: 0;
-	padding: 0;
-	border-radius: 5px;
-}
-
-input[type="file"] {
-	display: none;
-}
-
-label {
-	width: 47%;
-	display: block;
-	position: relative;
-	background-color: transparent;
-	color: #000000;
-	background-color: #ffffff;
+.input-container div div label {
 	font-size: 1rem;
-	font-weight: 500;
-	text-align: center;
+	width: max-content;
+}
+
+
+.input-container label {
+	font-size: 1.2rem;
+}
+
+.input-container input {
 	width: 100%;
-	padding: 12px 0;
-	margin: auto;
-	cursor: pointer;
+	padding: 10px;
+	font-size: 1rem;
+	background-color: transparent;
+	border: 1px solid #FFF;
+	font-family: 'Roboto-Mono', monospace;
+	color: #FFF;
 	border-radius: 5px;
+}
+
+.input-container textarea {
+	width: 100%;
+	padding: 10px;
+	font-size: 1rem;
+	background-color: transparent;
+	border: 1px solid #FFF;
+	font-family: 'Roboto-Mono', monospace;
+	color: #FFF;
+	height: 100px;
+	border-radius: 5px;
+}
+
+.cover-image {
+	width: 100%;
+	height: 300px;
+	background-color: transparent;
+	border: 1px solid #FFF;
+	padding: 10px;
+	border-radius: 5px;
+}
+
+.cover-image img {
+	width: 100%;
+	height: 100%;
+	object-fit: contain;
+}
+
+
+#editor-container {
 	display: flex;
-	flex-direction: row;
-	justify-content: center;
-	align-items: center;
+	flex-direction: column;
+	align-items: flex-start;
+	justify-content: flex-start;
+	width: 100%;
+	gap: 0px;
+}	
+
+#editor-container label {
+	font-size: 1.2rem;
+	margin-bottom: 10px;
 }
 
-label i {
-	text-align: left;
+#editor-container .ql-toolbar.ql-snow {
+	background-color: transparent;
+	border: 1px solid #FFF;
+	width: 100%;
+	border-radius: 5px 5px 0px 0px;
 }
 
+#editor-container .editor {
+	width: 100%;
+	height: 500px;
+	background-color: transparent;
+	border: 1px solid #FFF;
+	color: #FFF;
+	font-family: 'Roboto-Mono', monospace;
+	gap: 0px;
+	padding: 0px;
+	margin: 0px;
+	font-size: 1rem;
+	border-radius: 0px 0px 5px 5px;
+	border-top: none;
+}
 
-@media only screen and (max-width: 800px) {
-
-	form {
-		width: 100%;
-		padding: 0 20px;
-	}
-
-	form input {
-		width: 100%;
-	}
-
-	.container {
-		width: 100%;
-	}
-
-	select {
-		width: 100%;
-	}
-
-
+button {
+	padding: 15px 25px;
+	font-size: 1rem;
+	background-color: #ffdf90;
+	color: #000;
+	border: none;
+	cursor: pointer;
+	margin-left: auto;
+	font-family: 'Roboto-Mono', monospace;
+	border-radius: 5px;
 }

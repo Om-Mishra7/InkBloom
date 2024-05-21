@@ -8,7 +8,7 @@ main {
 }
 
 main .main-section {
-    border-right: 1px solid var(--color-surface-200);
+    border-right: 1px solid #3d392f;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -20,7 +20,7 @@ main .main-section {
 
 .blog-link {
     text-decoration: none;
-    color: var(--primary-text-color);
+    color: #eae1d4;
 }
 
 .blog-link:hover {
@@ -34,7 +34,7 @@ main .main-section {
     flex-direction: row;
     align-items: center;
     justify-content: center;
-    border-bottom: 1px solid var(--color-surface-200);
+    border-bottom: 1px solid #3d392f;
     padding: 50px 0 30px 0;
     gap: 50px;
 }
@@ -59,7 +59,7 @@ main .main-section {
     flex-direction: row;
     align-items: center;
     justify-content: flex-start;
-    gap: 10px;
+    gap: 5px;
     width: 100%;
 }
 
@@ -68,13 +68,11 @@ main .main-section {
     width: 30px;
     height: 30px;
     border-radius: 50%;
-    background-color: var(--color-surface-200);
 }
 
 .blog-metadata p {
     font-size: 0.8rem;
     font-weight: 400;
-    color: var(--primary-text-color);
 }
 
 .blog-main-section {

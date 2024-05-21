@@ -3,7 +3,5 @@ python-dotenv
 redis
 flask
 Flask-Session
-Flask-Limiter
 pymongo
-PurgoMalum
-sib-api-v3-sdk
+utils

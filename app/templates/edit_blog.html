@@ -14,33 +14,33 @@
   <main>
     <div class="input-container">
       <label for="title">Title</label>
-      <input type="text" id="title" placeholder="A informative title for your blog" />
+      <input type="text" id="title" placeholder="A informative title for your blog" value="{% if blog %}{{ blog.blog_metadata.title }}{% endif %}" />
     </div>
     <div class="input-container">
       <label for="description">Description</label>
-      <textarea id="description" placeholder="A short description for your blog"></textarea>
+      <textarea id="description" placeholder="A short description for your blog">{% if blog %}{{ blog.blog_metadata.description }}{% endif %}</textarea>
     </div>
     <div class="input-container">
       <label for="slug">Slug</label>
-      <input type="text" id="slug" placeholder="A unique slug for your blog" />
+      <input type="text" id="slug" placeholder="A unique slug for your blog" value="{% if blog %}{{ blog.blog_metadata.slug }}{% endif %}" />
     </div>
     <div class="input-container">
       <label for="tags">Tags</label>
-      <input type="text" id="tags" placeholder="Add tags to your blog(Comma separated)" />
+      <input type="text" id="tags" placeholder="Add tags to your blog(Comma separated)" value="{% if blog %}{{ blog.blog_metadata.tags }}{% endif %}" />
     </div>
     <div class="input-container">
       <label for="category">Category</label>
       <div class="category">
         <div>
-          <input type="radio" name="category" value="Dev-Logs" />
+          <input type="radio" name="category" value="Dev-Logs" {% if blog and blog.blog_metadata.category == "dev-logs" %}checked{% endif %} />
           <label for="tech">Dev&nbsp;Logs</label>
         </div>
         <div>
-          <input type="radio" name="category" value="Tutorial" />
+          <input type="radio" name="category" value="Tutorial" {% if blog and blog.blog_metadata.category == "tutorial" %}checked{% endif %} />
           <label for="tutorial">Tutorial</label>
         </div>
         <div>
-          <input type="radio" name="category" value="Project" />
+          <input type="radio" name="category" value="Project" {% if blog and blog.blog_metadata.category == "project" %}checked{% endif %} />
           <label for="project">Project</label>
         </div>
       </div>
@@ -49,15 +49,15 @@
       <label for="visibility">Visibility</label>
       <div class="visibility">
         <div>
-          <input type="radio" id="public" name="visibility" value="public" />
+          <input type="radio" id="public" name="visibility" value="public" {% if blog and blog.blog_metadata.visibility == "public" %}checked{% endif %} />
           <label for="public">Public</label>
         </div>
         <div>
-          <input type="radio" id="private" name="visibility" value="private" />
+          <input type="radio" id="private" name="visibility" value="private" {% if blog and blog.blog_metadata.visibility == "private" %}checked{% endif %} />
           <label for="private">Private</label>
         </div>
         <div>
-          <input type="radio" id="unlisted" name="visibility" value="unlisted" />
+          <input type="radio" id="unlisted" name="visibility" value="unlisted" {% if blog and blog.blog_metadata.visibility == "unlisted" %}checked{% endif %} />
           <label for="unlisted">Unlisted</label>
         </div>
       </div>
@@ -65,22 +65,24 @@
     <div class="input-container">
       <label for="featured">Featured</label>
       <div>
-        <input type="checkbox" id="featured" />
+        <input type="checkbox" id="featured" {% if blog and blog.blog_metadata.featured %}checked{% endif %} />
         <label for="featured">Featured&nbsp;Blog</label>
       </div>
     </div>
     <div class="input-container">
       <label for="cover">Cover Image</label>
       <input type="file" id="cover" accept="image/*" onchange="handleImage(event)" />
-      <img src="" alt="Cover Image" id="cover-image" style="display: none;" class="cover-image" />
+      <img src="{{blog.blog_metadata.cover_url}}" alt="Cover Image" id="cover-image" class="cover-image" />
     </div>
     <div id="editor-container">
       <label for="editor">Content</label>
       <div id="editor" class="editor">
-        <p>Start writing something amazing...</p>
+        {% if blog %}
+        {{ blog.blog_content | safe }}
+        {% endif %}
       </div>
     </div>
-    <button id="submit" onclick="submitBlog()">Submit</button>
+    <button id="submit" onclick="updateBlog({% if blog %}'{{ blog.blog_id }}'{% endif %})">Update Blog</button>
   </main>
 
   <script>
@@ -114,7 +116,7 @@
     const quill = new Quill('#editor', options);
   </script>
   {% include 'partials/footer.html' %}
-  <script src="/static/js/create_blog.js"></script>
+  <script src="/static/js/edit_blog.js"></script>
 </body>
 
 </html>

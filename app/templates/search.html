@@ -1,37 +1,104 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    {% include 'partials/header.html' %}
-    <title>InkBloom | ProjectRexa</title>
-    <link rel="stylesheet" href="/static/css/search.css" />
-    <script src="/static/js/search.js" defer></script>
-  </head>
-  <body>
-    {% include 'partials/navbar.html' %}
-    <main>
-      <div class="search-bar-page">
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          width="16"
-          height="16"
-          fill="currentColor"
-          class="bi bi-search"
-          viewBox="0 0 16 16"
-        >
-          <path
-            d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z"
-          />
-        </svg>
-        <input
-          type="text"
-          placeholder="Search..."
-          name="query"
-          id="search-bar-page"
-        />
+
+<head>
+  {% include 'partials/header.html' %}
+  <title>Blog | Om Mishra</title>
+  <link rel="stylesheet" href="/static/css/search.css" />
+  <script src="/static/js/index.js" defer></script>
+</head>
+
+<body>
+  {% include 'partials/navbar.html' %}
+  <main>
+    <div class="main-section">
+      <!-- tags=tags, category=category, publish_date_lt=publish_date_lt, publish_date_gt=publish_date_gt, publish_date_lte=publish_date_lte, publish_date_gte=publish_date_gte, views_lt=views_lt, views_gt=views_gt, views_lte=views_lte, views_gte=views_gte -->
+      <h1 class="search-title">Search Results for {% if tags %} tags: {{tags}} {% endif %} {% if category %} category:
+        {{category}} {% endif %} {% if publish_date_lt %} published before: {{publish_date_lt}} {% endif %} {% if
+        publish_date_gt %} published after: {{publish_date_gt}} {% endif %} {% if publish_date_lte %} published before or
+        on: {{publish_date_lte}} {% endif %} {% if publish_date_gte %} published after or on: {{publish_date_gte}} {% endif
+        %} {% if views_lt %} views less than: {{views_lt}} {% endif %} {% if views_gt %} views greater than: {{views_gt}}
+        {% endif %} {% if views_lte %} views less than or equal to: {{views_lte}} {% endif %} {% if views_gte %} views
+        greater than or equal to: {{views_gte}} {% endif %}</h1>
+      {% for category in search_results %}
+      <h2>Category: {{category.category | upper}}</h2>
+      {% for blog in category.blogs %}
+      <div class="blog" data-id="{{blog._id}}">
+        <div class="blog-details">
+          <div class="blog-metadata">
+            <p class="author-image">
+              <a href="https://om-mishra.com" target="_blank" rel="noopener noreferrer" title="Om Mishra's Website">
+                <img
+                  src="//wsrv.nl?url={{blog.author_details.user_info.avatar_url}}&w=50&h=50&maxage=31d&q=75&output=webp"
+                  alt="{{blog.author_details.user_info.name}}'s Profile Picture" />
+            </p>
+            <p class="author-name">{{blog.author_details.user_info.name}}
+              </a>
+            <p class="blog-publish-date">{{(blog.blog_metadata.created_at | string) | format_timestamp}}</p>
+          </div>
+
+          <div class="blog-main-section">
+            <a class="blog-link" href="/blog/{{blog.blog_metadata.slug}}">
+              <div class="blog-title">
+                <h1>
+                  {{blog.blog_metadata.title}}
+                </h1>
+              </div>
+
+              <div class="blog-summary">
+                <p>
+                  {{blog.blog_metadata.description}}...
+                </p>
+              </div>
+            </a>
+          </div>
+
+          <div class="blog-footer">
+            <div class="blog-tags">
+              {% for i in range(5) %}
+              {% if i < blog.blog_metadata.tags|length %} {% set tag=blog.blog_metadata.tags[i] %} <p><a
+                  href="/tags/{{tag | lower}}">{{ tag | upper
+                  }}</a></p>
+                {% endif %}
+                {% endfor %}
+            </div>
+
+            <div class="read-time">
+              <p>
+                <svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 -960 960 960" width="24">
+                  <path
+                    d="m612-292 56-56-148-148v-184h-80v216l172 172ZM480-80q-83 0-156-31.5T197-197q-54-54-85.5-127T80-480q0-83 31.5-156T197-763q54-54 127-85.5T480-880q83 0 156 31.5T763-763q54 54 85.5 127T880-480q0 83-31.5 156T763-197q-54 54-127 85.5T480-80Zm0-400Zm0 320q133 0 226.5-93.5T800-480q0-133-93.5-226.5T480-800q-133 0-226.5 93.5T160-480q0 133 93.5 226.5T480-160Z" />
+                </svg>{{blog.blog_metadata.read_time}} min read
+              </p>
+            </div>
+
+            <div class="blog-views">
+              <p>
+                <svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 -960 960 960" width="24">
+                  <path
+                    d="M480-320q75 0 127.5-52.5T660-500q0-75-52.5-127.5T480-680q-75 0-127.5 52.5T300-500q0 75 52.5 127.5T480-320Zm0-72q-45 0-76.5-31.5T372-500q0-45 31.5-76.5T480-608q45 0 76.5 31.5T588-500q0 45-31.5 76.5T480-392Zm0 192q-146 0-266-81.5T40-500q54-137 174-218.5T480-800q146 0 266 81.5T920-500q-54 137-174 218.5T480-200Zm0-300Zm0 220q113 0 207.5-59.5T832-500q-50-101-144.5-160.5T480-720q-113 0-207.5 59.5T128-500q50 101 144.5 160.5T480-280Z" />
+                </svg>
+                {{blog.blog_metadata.number_of_views}} Views
+              </p>
+            </div>
+          </div>
+        </div>
+        <div class="blog-image">
+          <a class="blog-link" href="/blog/{{blog.blog_metadata.slug}}">
+            <img src="//wsrv.nl?url={{blog.blog_metadata.cover_url}}&maxage=31d&q=50&w=300&h=300output=webp"
+              alt="{{blog.title}}'s Cover Image" />
+          </a>
+        </div>
       </div>
-      <div class="search-results-page" id="search-results-page"></div>
-    </main>
+      {% endfor %}
+      {% endfor %}
+
+    </div>
     {% include 'partials/footer.html' %}
 
-  </body>
+    </div>
+    </div>
+  </main>
+</body>
+
 </html>

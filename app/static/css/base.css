@@ -1,37 +1,20 @@
-@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,100..700;1,100..700&display=swap');
 
 * {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
-
-    --color-primary-100: #9c27b0;
-    --color-primary-200: #a945b9;
-    --color-primary-300: #b55ec2;
-    --color-primary-400: #c176cb;
-    --color-primary-500: #cc8dd4;
-    --color-primary-600: #d7a4dd;
-
-    --color-surface-100: #121212;
-    --color-surface-200: #282828;
-    --color-surface-300: #3f3f3f;
-    --color-surface-400: #575757;
-    --color-surface-500: #717171;
-    --color-surface-600: #8b8b8b;
-
-    --primary-text-color: #ffffff;
-    --secondary-text-color: #000000;
 }
 
 body {
-    font-family: 'Roboto', sans-serif;
-    background-color: var(--color-surface-100);
-    color: var(--primary-text-color);
+    font-family: 'Roboto Mono', monospace;
+    background-color: #110e07;
+    color: #eae1d4;
 }
 
 a {
     text-decoration: none;
-    color: var(--color-primary-500);
+    color: #ffdf90;
 }
 
 a:hover {
@@ -45,26 +28,4 @@ ul {
 ::-webkit-scrollbar {
     width: 2px;
     height: 2px;
-}
-
-::-moz-selection {
-    color: var(--color-surface-100);
-    background-color: var(--color-primary-100)
-}
-
-::selection {
-    color: var(--color-surface-100);
-    background-color: var(--color-primary-500)
-}
-
-::-webkit-scrollbar-track {
-    background: var(--color-surface-100)
-}
-
-::-webkit-scrollbar-thumb {
-    background: var(--color-surface-200)
-}
-
-::-webkit-scrollbar-thumb:hover {
-    background: var(--color-surface-500);
 }

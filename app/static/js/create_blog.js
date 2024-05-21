@@ -1,69 +1,69 @@
-tinymce.init({
-  selector: "textarea#naked",
-  skin: "naked",
-  icons: "small",
-  toolbar_location: "bottom",
-  plugins: "lists code table codesample link autolink image imagetools media charmap hr anchor pagebreak nonbreaking preview searchreplace wordcount visualblocks visualchars fullscreen insertdatetime media table contextmenu paste help",
-  toolbar:
-    "blocks | bold italic underline strikethrough bullist link codesample | alignleft aligncenter alignright alignjustify | outdent indent | image media | forecolor backcolor | charmap emoticons | hr pagebreak | removeformat code | undo redo | fullscreen preview | help | insertfile image media template link anchor codesample | a11ycheck ltr rtl | showcomments addcomment | visualchars visualblocks nonbreaking table",
-  menubar: false,
-  images_upload_url: "/api/v1/user-content/upload",
-  statusbar: false,
-});
+function handleImage() {
+  const fileInput = document.getElementById('cover');
+  const file = fileInput.files[0];
 
-let newPostForm = document.getElementById("new-post-form");
+  if (file) {
+    const reader = new FileReader();
+    reader.onload = function (e) {
+      const image = document.getElementById('cover-image');
+      image.src = e.target.result;
+      image.style.display = 'block';  // Ensure image is displayed
+    };
+    reader.readAsDataURL(file);
+  } else {
+    const image = document.getElementById('cover-image');
+    image.style.display = 'none';  // Hide image if no file is selected
+  }
+}
 
-newPostForm.addEventListener("submit", (e) => {
-  e.preventDefault();
-  let title = document.getElementById("title").value;
-  let csrfToken = document.getElementById("csrf_token").value;
-  let visibility = document.getElementById("visibility").value;
-  let content = tinymce.get("naked").getContent();
-  let tags = document.getElementById("tags").value;
-  let summary = document.getElementById("summary").value;
-  let coverImge = document.getElementById("file-input").files[0];
 
-  if (title == "") {
-    createAlert("error", "Title cannot be empty");
+function submitBlog() {
+  const title = document.getElementById('title').value;
+  const description = document.getElementById('description').value;
+  const slug = document.getElementById('slug').value;
+  const tags = document.getElementById('tags').value;
+  const category = document.querySelector('input[name="category"]:checked')?.value;
+  const visibility = document.querySelector('input[name="visibility"]:checked')?.value;
+  const featured = document.getElementById('featured').checked;
+  const cover = document.getElementById('cover').files[0];
+  const content = quill.getSemanticHTML(0, quill.getLength());
+
+  if (!title || !description || !slug || !tags || !category || !visibility || !cover || !content) {
+    createAlert('error', `The following fields are required: ${!title ? 'Title' : ''} ${!description ? 'Description' : ''} ${!slug ? 'Slug' : ''} ${!tags ? 'Tags' : ''} ${!category ? 'Category' : ''} ${!visibility ? 'Visibility' : ''} ${!cover ? 'Cover' : ''} ${!content ? 'Content' : ''}`);
     return;
   }
 
-  if (content == "") {
-    createAlert("error", "Content cannot be empty");
-    return;
-  }
+  document.getElementById('submit').disabled = true;
+  document.getElementById('submit').innerHTML = 'Submitting...';
 
-  if (summary == "") {
+  const formData = new FormData();
+  formData.append('title', title);
+  formData.append('description', description);
+  formData.append('slug', slug);
+  formData.append('tags', tags);
+  formData.append('category', category);
+  formData.append('visibility', visibility);
+  formData.append('featured', featured);
+  formData.append('cover', cover);
+  formData.append('content', content);
 
-    createAlert("error", "Summary cannot be empty");
-
-    return;
-
-  }
-
-  let formData = new FormData();
-  formData.append("title", title);
-  formData.append("visibility", visibility);
-  formData.append("content", content);
-  formData.append("tags", tags);
-  formData.append("summary", summary);
-  formData.append("csrf_token", csrfToken);
-  formData.append("cover_image", coverImge);
-
-  fetch(window.location.pathname, {
-    method: "POST",
+  fetch('/api/blog', {
+    method: 'POST',
     body: formData,
   })
-    .then((res) => res.json())
+    .then((response) => response.json())
     .then((data) => {
-      if (data.status == "success") {
-        createAlert("success", data.message.replace(/\s/g, '-').trim());
-        setTimeout(() => {
-          window.location.href = "/blogs/" + data.blog_slug;
-        }, 1000);
+      if (data.status === 'success') {
+        window.location.href = `/blog/${data.slug}`;
       } else {
-        createAlert(data.message);
+        createAlert('error', data.message);
+        document.getElementById('submit').disabled = false;
+        document.getElementById('submit').innerHTML = 'Submit';
       }
     })
-    .catch((err) => console.log(err));
-});
+    .catch((error) => {
+      createAlert('error', "Something went wrong. Please try again later.");
+      document.getElementById('submit').disabled = false;
+      document.getElementById('submit').innerHTML = 'Submit';
+    });
+}

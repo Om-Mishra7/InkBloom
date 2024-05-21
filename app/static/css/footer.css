@@ -36,14 +36,10 @@
 .social-media a svg {
     width: 20px;
     height: 20px;
-    fill: #d8d4cf;
+    fill: #eae1d4;
 }
 
 .github-link svg {
     width: 25px !important;
     height: 25px !important;
-}
-
-.version-info {
-    font-family: monospace;
 }
