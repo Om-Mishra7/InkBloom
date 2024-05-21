@@ -41,7 +41,7 @@ searchBar.addEventListener("keyup", function (event) {
               data.results.forEach((element) => {
                 console.log(element);
                 const result = document.createElement("a");
-                result.href = "/blog/" + element.slug;
+                result.href = "/blog/" + element.blog_metadata.slug;  
                 result.innerHTML = element.blog_metadata.title;
                 searchResults.appendChild(result);
               });

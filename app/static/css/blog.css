@@ -374,23 +374,14 @@ textarea {
 }
 
 .delete-comment {
-  font-size: 0.9rem;
-  cursor: pointer;
-  padding: 8px 10px;
-  color: #000;
-  background-color: #fff;
-  border: none;
+  padding: 15px 20px;
   border-radius: 5px;
-}
-
-.block-user {
-  font-size: 0.9rem;
-  cursor: pointer;
-  padding: 8px 10px;
-  color: #fff;
+  border: none;
   background-color: #bb2124;
-  border: none;
-  border-radius: 5px;
+  color: #fff;
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.9rem;
 }
 
 .blog-actions {

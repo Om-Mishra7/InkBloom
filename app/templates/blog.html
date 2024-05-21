@@ -80,10 +80,11 @@
             <div class="blog-comment-author-info">
               {% if comment.author_details.user_info.username == 'om-mishra7' %}
               <p class="blog-comment-author-name">{{ comment.author_details.user_info.name }}</p>
-              <svg xmlns="http://www.w3.org/2000/svg" height="15px" viewBox="0 -960 960 960" width="15px"
-                fill="#ffdf90" title="Moderator" class="bi bi-shield-fill-check">
+              <svg xmlns="http://www.w3.org/2000/svg" height="15px" viewBox="0 -960 960 960" width="15px" fill="#ffdf90"
+                title="Moderator" class="bi bi-shield-fill-check">
                 <path
-                  d="M480-80q-139-35-229.5-159.5T160-516v-244l320-120 320 120v244q0 152-90.5 276.5T480-80Zm0-84q97-30 162-118.5T718-480H480v-315l-240 90v207q0 7 2 18h238v316Z" title="Moderator" />
+                  d="M480-80q-139-35-229.5-159.5T160-516v-244l320-120 320 120v244q0 152-90.5 276.5T480-80Zm0-84q97-30 162-118.5T718-480H480v-315l-240 90v207q0 7 2 18h238v316Z"
+                  title="Moderator" />
               </svg>
               {% else %}
               <p class="blog-comment-author-name">{{ comment.author_details.user_info.name }}</p>
@@ -94,6 +95,11 @@
             </div>
           </div>
           <p class="blog-comment-content">{{ comment.comment_content }}</p>
+          {% if session.get('user') is not none and session['user']['username'] == 'om-mishra7' %}
+          <div class="blog-comment-actions">
+            <button class="delete-comment" onclick="window.location.replace('/api/blog/{{ blog.blog_id }}/comment/{{ comment.comment_id }}/delete')">Delete</button>
+          </div>
+          {% endif %}
         </div>
         {% endfor %}
       </div>

@@ -392,6 +392,12 @@ def blog(slug):
     blog_data = DATABASE["BLOGS"].find_one({"blog_metadata.slug": slug})
     if blog_data is None:
         abort(404)
+    if blog_data["blog_metadata"]["visibility"] == "private":
+        if (
+            session.get("user") is None
+            or session.get("user").get("user_id") != blog_data["blog_author"]["user_id"]
+        ):
+            abort(401)
     author_data = DATABASE["USERS"].find_one(
         {"user_id": blog_data["blog_author"]["user_id"]}
     )
@@ -632,6 +638,16 @@ def create_comment(id):
         }
     )
 
+@app.route("/api/blog/<id>/comment/<comment_id>/delete", methods=["GET"])
+def delete_comment(id, comment_id):
+    comment_data = DATABASE["COMMENTS"].find_one({"comment_id": comment_id})
+    if comment_data is None:
+        abort(404)
+    if session.get("user").get("user_id") != comment_data["comment_author"]["user_id"]:
+        abort(401)
+    DATABASE["COMMENTS"].delete_one({"comment_id": comment_id})
+
+    return redirect((f"/blog/{DATABASE['BLOGS'].find_one({'blog_id': id})['blog_metadata']['slug']}"))
 
 
 # Application Auth Routes
@@ -847,7 +863,7 @@ def search_api():
 
 @app.route("/tags/<tag>", methods=["GET"])
 def tags(tag):
-    return redirect(url_for("search", tag=tag))
+    return redirect(url_for("search", tags=tag))
 
 @app.route("/category/<category>", methods=["GET"])
 def category(category):
@@ -866,6 +882,11 @@ def search():
     views_lte = request.args.get("views_lte", type=int)
     views_gte = request.args.get("views_gte", type=int)
 
+    print(tags, category, publish_date_lt, publish_date_gt, publish_date_lte, publish_date_gte, views_lt, views_gt, views_lte, views_gte)
+
+    if tags == [] and not category and not publish_date_lt and not publish_date_gt and not publish_date_lte and not publish_date_gte and views_lt is None and views_gt is None and views_lte is None and views_gte is None:
+        return abort(400)
+
     # Building the match stage
     match_stage = {"$match": {"blog_metadata.visibility": "public"}}  # Consider only public blog posts
     
@@ -877,43 +898,43 @@ def search():
     
     if publish_date_lt:
         if "blog_metadata.publish_date" not in match_stage["$match"]:
-            match_stage["$match"]["blog_metadata.publish_date"] = {}
-        match_stage["$match"]["blog_metadata.publish_date"]["$lt"] = datetime.strptime(publish_date_lt, "%Y-%m-%d")
+            match_stage["$match"]["blog_metadata.created_at"] = {}
+        match_stage["$match"]["blog_metadata.created_at"]["$lt"] = datetime.strptime(publish_date_lt, "%Y-%m-%d")
     
     if publish_date_gt:
         if "blog_metadata.publish_date" not in match_stage["$match"]:
-            match_stage["$match"]["blog_metadata.publish_date"] = {}
-        match_stage["$match"]["blog_metadata.publish_date"]["$gt"] = datetime.strptime(publish_date_gt, "%Y-%m-%d")
+            match_stage["$match"]["blog_metadata.created_at"] = {}
+        match_stage["$match"]["blog_metadata.created_at"]["$gt"] = datetime.strptime(publish_date_gt, "%Y-%m-%d")
     
     if publish_date_lte:
         if "blog_metadata.publish_date" not in match_stage["$match"]:
-            match_stage["$match"]["blog_metadata.publish_date"] = {}
-        match_stage["$match"]["blog_metadata.publish_date"]["$lte"] = datetime.strptime(publish_date_lte, "%Y-%m-%d")
+            match_stage["$match"]["blog_metadata.created_at"] = {}
+        match_stage["$match"]["blog_metadata.created_at"]["$lte"] = datetime.strptime(publish_date_lte, "%Y-%m-%d")
     
     if publish_date_gte:
         if "blog_metadata.publish_date" not in match_stage["$match"]:
-            match_stage["$match"]["blog_metadata.publish_date"] = {}
-        match_stage["$match"]["blog_metadata.publish_date"]["$gte"] = datetime.strptime(publish_date_gte, "%Y-%m-%d")
+            match_stage["$match"]["blog_metadata.created_at"] = {}
+        match_stage["$match"]["blog_metadata.created_at"]["$gte"] = datetime.strptime(publish_date_gte, "%Y-%m-%d")
     
     if views_lt is not None:
         if "blog_metadata.views" not in match_stage["$match"]:
-            match_stage["$match"]["blog_metadata.views"] = {}
-        match_stage["$match"]["blog_metadata.views"]["$lt"] = views_lt
+            match_stage["$match"]["blog_metadata.number_of_views"] = {}
+        match_stage["$match"]["blog_metadata.number_of_views"]["$lt"] = views_lt
     
     if views_gt is not None:
         if "blog_metadata.views" not in match_stage["$match"]:
-            match_stage["$match"]["blog_metadata.views"] = {}
-        match_stage["$match"]["blog_metadata.views"]["$gt"] = views_gt
+            match_stage["$match"]["blog_metadata.number_of_views"] = {}
+        match_stage["$match"]["blog_metadata.number_of_views"]["$gt"] = views_gt
     
     if views_lte is not None:
         if "blog_metadata.views" not in match_stage["$match"]:
-            match_stage["$match"]["blog_metadata.views"] = {}
-        match_stage["$match"]["blog_metadata.views"]["$lte"] = views_lte
+            match_stage["$match"]["blog_metadata.number_of_views"] = {}
+        match_stage["$match"]["blog_metadata.number_of_views"]["$lte"] = views_lte
     
     if views_gte is not None:
         if "blog_metadata.views" not in match_stage["$match"]:
-            match_stage["$match"]["blog_metadata.views"] = {}
-        match_stage["$match"]["blog_metadata.views"]["$gte"] = views_gte
+            match_stage["$match"]["blog_metadata.number_of_views"] = {}
+        match_stage["$match"]["blog_metadata.number_of_views"]["$gte"] = views_gte
 
     # Building the group stage
     lookup_stage = {

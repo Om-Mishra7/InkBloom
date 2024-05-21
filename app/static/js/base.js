@@ -12,3 +12,10 @@ function createAlert(type, message) {
     , 5000);
 }
 
+// If there is a message in the URL, display it as an alert
+let urlParams = new URLSearchParams(window.location.search);
+let message = urlParams.get('message');
+
+if (message) {
+  createAlert("error", message);
+}
