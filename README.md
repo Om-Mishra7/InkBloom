@@ -1,6 +1,6 @@
-# ProjectRexa InkBloom
+# InkBloom
 
-Welcome to ProjectRexa InkBloom, a versatile blog application built with Flask. This platform simplifies the process of creating, managing, and sharing your thoughts with the world.
+Welcome to InkBloom, a versatile blog application built with Flask. This platform simplifies the process of creating, managing, and sharing your thoughts with the world.
 
 ## Screenshots
 
