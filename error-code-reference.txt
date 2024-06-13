@@ -1,4 +1,0 @@
-Code: 00001
-Issue: Github client ID was not found in the environment variables.
-Debugging steps:
-1. Check if there is a .env file in the root directory of the project or in the hosted environment and if it has the correct client ID for Github.

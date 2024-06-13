@@ -1,12 +1,13 @@
-FROM python:3-alpine3.8
+FROM python:3.8
 
 WORKDIR /app
 
-COPY . .
+COPY requirements.txt .
 
-# Install Python dependencies
-RUN pip3 install -r requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt
+
+COPY . .
 
 EXPOSE 8000
 
-CMD ["python3", "main.py"]
+CMD ["python3", "app/main.py"]
