@@ -1031,6 +1031,3 @@ def handle_errors(e):
         "message": error_messages.get(status_code, "Unknown error"),
     }, status_code
 
-
-if __name__ == "__main__":
-    app.run(port=8000)
