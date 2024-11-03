@@ -687,8 +687,9 @@ def github_callback():
         "https://accounts.om-mishra.com/api/v1/oauth2/user-info",
         headers={
             "Accept": "application/json",
+            "Content-Type": "application/json",
         },
-        data={
+        json={
             "client_id": 'ebbf4742-7ad2-4ecc-a9a0-8d3c3c1da164',
             "client_secret": os.getenv("OM_MISHRA_ACCOUNTS_CLIENT_SECRET"),
             "code": code,
@@ -702,23 +703,23 @@ def github_callback():
                 message="The authentication attempt failed, due to invalid response from GitHub!",
             )
         )
-
-    user_data = oauth_response.json()
+    
+    user_data = oauth_response.json()["user"]
 
     if (
-        DATABASE["USERS"].find_one({"account_info.user_id": user_data.user_public_id}) is None
+        DATABASE["USERS"].find_one({"account_info.oauth_id": user_data["user_public_id"]}) is None
     ):
         DATABASE["USERS"].insert_one(
             {
-                "user_id": user_data.user_public_id,
+                "user_id": user_data["user_public_id"],
                 "user_info": {
-                    "username": user_data.user_profile.user_name,
-                    "name": user_data.user_profile.user_display_name,
-                    "avatar_url": user_data.user_profile.user_profile_picture,
+                    "username": user_data["user_profile"]["user_name"],
+                    "name": user_data["user_profile"]["user_display_name"],
+                    "avatar_url": user_data["user_profile"]["user_profile_picture"],
                 },
                 "account_info": {
                     "oauth_provider": "om-mishra",
-                    "oauth_id": user_data.user_public_id,
+                    "oauth_id": user_data["user_public_id"],
                     "created_at": datetime.now(),
                     "last_login": datetime.now(),
                     "is_active": True,
@@ -727,18 +728,18 @@ def github_callback():
         )
     else:
         user_id = DATABASE["USERS"].find_one(
-            {"account_info.oauth_id": user_data.user_public_id}
+            {"account_info.oauth_id": user_data["user_public_id"]}
         )["user_id"]
 
         DATABASE["USERS"].update_one(
-            {"account_info.oauth_id": user_data.user_public_id},
-            {"$set": {"account_info.last_login": datetime.now()}},
+            {"account_info.oauth_id": user_data["user_public_id"]},
+            {"$set": {"account_info.last_login": datetime.now(), "user_info.avatar_url": user_data["user_profile"]["user_profile_picture"]}},
         )
 
-    user_info = DATABASE["USERS"].find_one({"user_id": user_id})
+    user_info = DATABASE["USERS"].find_one({"user_id": user_data["user_public_id"]})
 
     session["user"] = {
-        "user_id": user_id,
+        "user_id": user_info["user_id"],
         "username": user_info["user_info"]["username"],
         "name": user_info["user_info"]["name"],
         "avatar_url": f"{user_info['user_info']['avatar_url']}",
@@ -826,8 +827,6 @@ def search():
     views_gt = request.args.get("views_gt", type=int)
     views_lte = request.args.get("views_lte", type=int)
     views_gte = request.args.get("views_gte", type=int)
-
-    print(tags, category, publish_date_lt, publish_date_gt, publish_date_lte, publish_date_gte, views_lt, views_gt, views_lte, views_gte)
 
     if tags == [] and not category and not publish_date_lt and not publish_date_gt and not publish_date_lte and not publish_date_gte and views_lt is None and views_gt is None and views_lte is None and views_gte is None:
         return abort(400)
