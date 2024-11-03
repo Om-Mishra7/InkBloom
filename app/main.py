@@ -689,10 +689,9 @@ def github_callback():
             "Accept": "application/json",
         },
         data={
-            "client_id": os.getenv("GITHUB_CLIENT_ID"),
-            "client_secret": os.getenv("GITHUB_CLIENT_SECRET"),
+            "client_id": os.getenv("OM_MISHRA_ACCOUNTS_CLIENT_ID"),
+            "client_secret": os.getenv("OM_MISHRA_ACCOUNTS_CLIENT_SECRET"),
             "code": code,
-            "redirect_uri": os.getenv("GITHUB_REDIRECT_URI"),
         },
     )
 
