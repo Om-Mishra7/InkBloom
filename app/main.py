@@ -656,7 +656,7 @@ def delete_comment(id, comment_id):
 @app.route("/auth/login", methods=["GET"])
 def login():
     session["auth_state"] = secrets.token_hex(16)
-    return redirect(f'https://accounts.om-mishra.com/api/v1/oauth2/authorize?client_id={os.getenv("OM_MISHRA_ACCOUNTS_CLIENT_ID")}')
+    return redirect(f'https://accounts.om-mishra.com/api/v1/oauth2/authorize?client_id=ebbf4742-7ad2-4ecc-a9a0-8d3c3c1da164')
 
 @app.route("/auth/logout", methods=["GET"])
 def logout():
@@ -689,7 +689,7 @@ def github_callback():
             "Accept": "application/json",
         },
         data={
-            "client_id": os.getenv("OM_MISHRA_ACCOUNTS_CLIENT_ID"),
+            "client_id": 'ebbf4742-7ad2-4ecc-a9a0-8d3c3c1da164',
             "client_secret": os.getenv("OM_MISHRA_ACCOUNTS_CLIENT_SECRET"),
             "code": code,
         },
