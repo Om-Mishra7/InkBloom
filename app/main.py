@@ -656,11 +656,7 @@ def delete_comment(id, comment_id):
 @app.route("/auth/login", methods=["GET"])
 def login():
     session["auth_state"] = secrets.token_hex(16)
-    return render_template(
-        "auth/login.html",
-        redirect_url=f"https://github.com/login/oauth/authorize?client_id={os.getenv('GITHUB_CLIENT_ID')}&redirect_uri={os.getenv('GITHUB_REDIRECT_URI')}&scope=user&state={session['auth_state']}",
-    )
-
+    return redirect(f'https://accounts.om-mishra.com/api/v1/oauth2/authorize?client_id={os.getenv("OM_MISHRA_ACCOUNTS_CLIENT_ID")}')
 
 @app.route("/auth/logout", methods=["GET"])
 def logout():
@@ -668,7 +664,7 @@ def logout():
     return redirect(url_for("index"))
 
 
-@app.route("/api/auth/github/callback", methods=["GET"])
+@app.route("/oauth/_handler", methods=["GET"])
 def github_callback():
     code = request.args.get("code")
     if not code:
@@ -687,8 +683,8 @@ def github_callback():
             )
         )
 
-    github_response = requests.post(
-        "https://github.com/login/oauth/access_token",
+    oauth_response = requests.post(
+        "https://accounts.om-mishra.com/api/v1/oauth2/user-info",
         headers={
             "Accept": "application/json",
         },
@@ -700,7 +696,7 @@ def github_callback():
         },
     )
 
-    if github_response.status_code != 200:
+    if oauth_response.status_code != 200:
         return redirect(
             url_for(
                 "index",
@@ -708,50 +704,22 @@ def github_callback():
             )
         )
 
-    github_response_data = github_response.json()
-
-    if "error" in github_response_data:
-        return redirect(
-            url_for(
-                "index",
-                message=f"The authentication attempt failed, due to error: {github_response_data['error']}!",
-            )
-        )
-
-    github_user_response = requests.get(
-        "https://api.github.com/user",
-        headers={
-            "Accept": "application/json",
-            "Authorization": f"token {github_response_data['access_token']}",
-        },
-    )
-
-    if github_user_response.status_code != 200:
-        return redirect(
-            url_for(
-                "index",
-                message="The authentication attempt failed, due to invalid response from GitHub User API!",
-            )
-        )
-
-    github_user_data = github_user_response.json()
+    user_data = oauth_response.json()
 
     if (
-        DATABASE["USERS"].find_one({"account_info.oauth_id": github_user_data["id"]})
-        is None
+        DATABASE["USERS"].find_one({"account_info.user_id": user_data.user_public_id}) is None
     ):
-        user_id = str(uuid.uuid4())
         DATABASE["USERS"].insert_one(
             {
-                "user_id": user_id,
+                "user_id": user_data.user_public_id,
                 "user_info": {
-                    "username": github_user_data["login"].lower(),
-                    "name": github_user_data["name"].title(),
-                    "avatar_url": f"https://cdn.om-mishra.com/avatars/{user_id}.png",
+                    "username": user_data.user_profile.user_name,
+                    "name": user_data.user_profile.user_display_name,
+                    "avatar_url": user_data.user_profile.user_profile_picture,
                 },
                 "account_info": {
-                    "oauth_provider": "github",
-                    "oauth_id": github_user_data["id"],
+                    "oauth_provider": "om-mishra",
+                    "oauth_id": user_data.user_public_id,
                     "created_at": datetime.now(),
                     "last_login": datetime.now(),
                     "is_active": True,
@@ -760,34 +728,12 @@ def github_callback():
         )
     else:
         user_id = DATABASE["USERS"].find_one(
-            {"account_info.oauth_id": github_user_data["id"]}
+            {"account_info.oauth_id": user_data.user_public_id}
         )["user_id"]
 
         DATABASE["USERS"].update_one(
-            {"account_info.oauth_id": github_user_data["id"]},
+            {"account_info.oauth_id": user_data.user_public_id},
             {"$set": {"account_info.last_login": datetime.now()}},
-        )
-
-    user_avatar_upload_response = requests.post(
-        "https://api.cdn.om-mishra.com/v1/upload-file",
-        headers={
-            "X-Authorization": os.getenv("CDN_API_KEY"),
-        },
-        files={
-            "file": requests.get(github_user_data["avatar_url"]).content,
-        },
-        data={
-            "object_path": f"avatars/{user_id}.png",
-        },
-        timeout=5,
-    )
-
-    if user_avatar_upload_response.status_code != 200:
-        return redirect(
-            url_for(
-                "index",
-                message="The authentication attempt failed, due to invalid response from Avatar Upload API!",
-            )
         )
 
     user_info = DATABASE["USERS"].find_one({"user_id": user_id})
