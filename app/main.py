@@ -974,4 +974,3 @@ def handle_errors(e):
         "status": "error",
         "message": error_messages.get(status_code, "Unknown error"),
     }, status_code
-
