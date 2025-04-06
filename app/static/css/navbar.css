@@ -310,9 +310,9 @@ hr {
     }
 
     .search-icon {
-        display: block;
         cursor: pointer;
-    }
+        display: none
+       }
 
     .sign-up {
         font-size: 0.8rem;
