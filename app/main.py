@@ -9,7 +9,7 @@ import urllib.parse
 import redis
 import utils
 import secrets
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timezone
 import requests
 from dotenv import load_dotenv
 from flask import (
@@ -20,6 +20,7 @@ from flask import (
     request,
     session,
     jsonify,
+    make_response,
     abort,
 )
 from flask_session import Session
@@ -38,6 +39,13 @@ app = Flask(__name__)
 # Setting the service version
 
 service_version = "4.2.0"
+
+SITE_CONFIG = {
+    "BASE_URL": "https://blog.om-mishra.com",
+    "TITLE": "Om Mishra's Blog",
+    "DESCRIPTION": "Thoughts and ramblings about technology, life, and everything in between.",
+    "LANGUAGE": "en-us"
+}
 
 # App Configuration
 
@@ -69,6 +77,14 @@ DATABASE = MONOGDB_CLIENT["INKBLOOM"]
 # Session Initialization
 
 Session(app)
+
+def format_rfc822(dt):
+    """Formats a datetime object into RFC 822 format (required for RSS pubDate)."""
+    if dt.tzinfo is None:
+        return dt.strftime('%a, %d %b %Y %H:%M:%S GMT')
+    else:
+        # If timezone-aware, format accordingly (this example assumes UTC)
+        return dt.strftime('%a, %d %b %Y %H:%M:%S %Z').replace("UTC", "GMT")
 
 
 def calculate_read_time(html_content, words_per_minute=200, image_time_seconds=12):
@@ -649,6 +665,61 @@ def delete_comment(id, comment_id):
 
     return redirect((f"/blog/{DATABASE['BLOGS'].find_one({'blog_id': id})['blog_metadata']['slug']}"))
 
+@app.route("/rss", methods=["GET"])
+def rss_feed():
+    blogs_pipeline = [
+        {"$match": {"blog_metadata.visibility": "public"}},
+        {"$sort": {"blog_metadata.created_at": -1}}, # Sort by creation date descending
+        {
+            "$lookup": {
+                "from": "USERS", # Use your actual users collection name
+                "localField": "blog_author.user_id",
+                "foreignField": "user_id",
+                "as": "author_details",
+            }
+        },
+        {"$unwind": {"path": "$author_details", "preserveNullAndEmptyArrays": True}}, # Keep blogs even if author lookup fails
+        {"$limit": 20} # Limit the number of items in the feed
+    ]
+    blogs = list(DATABASE["BLOGS"].aggregate(blogs_pipeline)) #
+
+    # Pre-format dates if not using a Jinja filter
+    for blog in blogs:
+        if 'created_at' in blog.get('blog_metadata', {}):
+             blog['blog_metadata']['pubDate'] = format_rfc822(blog['blog_metadata']['created_at'])
+
+    # Use make_response to set the correct Content-Type
+    response = make_response(render_template(
+        "rss.xml",
+        blogs=blogs,
+        site=SITE_CONFIG,
+        last_build_date=format_rfc822(datetime.now(timezone.utc)) # Or use latest blog post date
+    ))
+    response.headers['Content-Type'] = 'application/rss+xml; charset=utf-8'
+    return response
+
+@app.route("/sitemap", methods=["GET"])
+def sitemap():
+    blogs_pipeline = [
+        {"$match": {"blog_metadata.visibility": "public"}},
+        {"$sort": {"blog_metadata.updated_at": -1}}, # Sort by update date for sitemap
+        # No need for author lookup in sitemap
+    ]
+    blogs = list(DATABASE["BLOGS"].aggregate(blogs_pipeline + [
+        {"$project": {
+            "_id": 0, # Exclude Mongo ID
+            "slug": "$blog_metadata.slug",
+            "lastmod": "$blog_metadata.updated_at"
+        }}
+    ]))
+
+    response = make_response(render_template(
+        "sitemap.xml",
+        blogs=blogs,
+        site=SITE_CONFIG
+    ))
+    response.headers['Content-Type'] = 'application/xml; charset=utf-8'
+    return response
 
 # Application Auth Routes
 

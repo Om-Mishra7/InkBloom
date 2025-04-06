@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0"
+    xmlns:content="http://purl.org/rss/1.0/modules/content/"
+    xmlns:dc="http://purl.org/dc/elements/1.1/"
+    xmlns:atom="http://www.w3.org/2005/Atom">
+    <channel>
+        <title>{{ site.TITLE }}</title>
+        <link>{{ site.BASE_URL }}</link>
+        <description>{{ site.DESCRIPTION }}</description>
+        <language>{{ site.LANGUAGE }}</language>
+        <lastBuildDate>{{ last_build_date }}</lastBuildDate> {# Or use blogs[0].blog_metadata.pubDate if blogs exist #}
+        <atom:link href="{{ url_for('rss_feed', _external=True) }}" rel="self" type="application/rss+xml" />
+        {# Generator tag (optional) #}
+        <generator>My Flask Blog Engine</generator>
+
+        {% for blog in blogs %}
+        <item>
+            <title>{{ blog.blog_metadata.title }}</title>
+            {# Construct the absolute URL to the blog post #}
+            <link>{{ url_for('blog', slug=blog.blog_metadata.slug, _external=True) }}</link>
+            {# Use the permalink URL as the GUID #}
+            <guid isPermaLink="true">{{ url_for('blog', slug=blog.blog_metadata.slug, _external=True) }}</guid>
+            {# Use the pre-formatted RFC 822 date string passed from the view #}
+            <pubDate>{{ blog.blog_metadata.pubDate }}</pubDate>
+            {% if blog.author_details and blog.author_details.user_info %}
+            <dc:creator>{{ blog.author_details.user_info.name }}</dc:creator>
+            {% endif %}
+            {# Use description metadata - wrap in CDATA if it might contain HTML #}
+            <description><![CDATA[{{ blog.blog_metadata.description | e }}]]></description>
+            {# Include full content - wrap in CDATA #}
+            <content:encoded><![CDATA[{{ blog.blog_content | safe }}]]></content:encoded>
+            {# Add categories from tags #}
+            {% if blog.blog_metadata.tags %}
+                {% for tag in blog.blog_metadata.tags %}
+            <category>{{ tag }}</category>
+                {% endfor %}
+            {% elif blog.blog_metadata.category %}
+            <category>{{ blog.blog_metadata.category }}</category>
+            {% endif %}
+            {# Add featured image as enclosure (optional) #}
+            {% if blog.blog_metadata.cover_url %}
+            {# You might need to fetch image size/type for a proper enclosure #}
+            {# <enclosure url="{{ blog.blog_metadata.cover_url }}" length="SIZE_IN_BYTES" type="image/png"/> #}
+            {% endif %}
+        </item>
+        {% endfor %}
+    </channel>
+</rss>

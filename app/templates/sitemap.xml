@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+
+    {# Static Pages added first #}
+    {% for page in static_pages %}
+    <url>
+        <loc>{{ page.loc }}</loc>
+        <lastmod>{{ page.lastmod.strftime('%Y-%m-%d') }}</lastmod> {# Format date as YYYY-MM-DD #}
+        <changefreq>{{ page.changefreq | default('monthly') }}</changefreq>
+        <priority>{{ page.priority | default('0.8') }}</priority>
+    </url>
+    {% endfor %}
+
+    {# Blog Posts #}
+    {% for blog in blogs %}
+    <url>
+        {# Construct the absolute URL to the blog post #}
+        <loc>{{ url_for('blog', slug=blog.slug, _external=True) }}</loc>
+        {# Use updated_at for lastmod, format as YYYY-MM-DD #}
+        <lastmod>{{ blog.lastmod.strftime('%Y-%m-%d') }}</lastmod>
+        {# Optional: You can add changefreq and priority for blog posts too #}
+        <changefreq>monthly</changefreq>
+        <priority>0.9</priority>
+    </url>
+    {% endfor %}
+
+</urlset>
