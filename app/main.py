@@ -37,7 +37,7 @@ app = Flask(__name__)
 
 # Setting the service version
 
-service_version = "4.1.0"
+service_version = "4.2.0"
 
 # App Configuration
 
