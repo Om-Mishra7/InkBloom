@@ -1,64 +1,35 @@
 <meta charset="UTF-8" />
 <!-- Primary Meta Tags -->
-<meta
-  name="title"
-  content="Blog | Om Mishra"
-/>
-<meta
-  name="description"
-  <meta
-  property="og:description"
-  content="{{ description if description else 'This is a blog by Om Mishra. I write about technology, programming, and other things that interest me.' }}"
-/>
+<meta name="title" content="Blog | Om Mishra" />
+<meta name="description" <meta property="og:description"
+  content="{{ description if description else 'This is a blog by Om Mishra. I write about technology, programming, and other things that interest me.' }}" />
 
 <!-- Open Graph / Facebook -->
 <meta property="og:type" content="website" />
-<meta
-  property="og:url"
-  content="https://blog.om-mishra.com{{ url_for(request.endpoint, **request.view_args) }}"
-/>
-<meta
-  property="og:title"
-  content="Blog | Om Mishra"
-/>
-<meta
-  property="og:description"
-  content="This is a blog by Om Mishra. I write about technology, programming, and other things that interest me."
-/>
-<meta
-  property="og:image"
-  content="{{ image if image else 'https://cdn.projectrexa.dedyn.io/projectrexa/assets/meta-logo.png' }}"
-/>
+<meta property="og:url" content="https://blog.om-mishra.com{{ url_for(request.endpoint, **request.view_args) }}" />
+<meta property="og:title" content="Blog | Om Mishra" />
+<meta property="og:description"
+  content="This is a blog by Om Mishra. I write about technology, programming, and other things that interest me." />
+<meta property="og:image" content="{{ image if image else 'http://cdn.om-mishra.com/assets/om-mishra-logo.png' }}" />
 
 <!-- X -->
 <meta property="twitter:card" content="summary_large_image" />
 <meta name="twitter:site" content="@projectrexa" />
 <meta name="twitter:creator" content="@projectrexa" />
-<meta
-  property="twitter:url"
-  content="https://blog.projectrexa.dedyn.io{{ url_for(request.endpoint, **request.view_args) }}"
-/>
-<meta
-  property="twitter:title"
-  content="{{ (title + ' - InkBloom|ProjectRexa Blog') if title else 'InkBloom|ProjectRexa Blog'}}"
-/>
-<meta
-  property="twitter:description"
-  content="{{ description if description else 'Welcome to InkBloom, my personal tech blog!' }}"
-/>
-<meta
-  property="twitter:image"
-  content="{{ image if image else 'https://cdn.projectrexa.dedyn.io/projectrexa/assets/meta-logo.png' }}"
-/>
+<meta property="twitter:url"
+  content="https://blog.projectrexa.dedyn.io{{ url_for(request.endpoint, **request.view_args) }}" />
+<meta property="twitter:title"
+  content="{{ (title + ' - InkBloom|ProjectRexa Blog') if title else 'InkBloom|ProjectRexa Blog'}}" />
+<meta property="twitter:description"
+  content="{{ description if description else 'Welcome to InkBloom, my personal tech blog!' }}" />
+<meta property="twitter:image"
+  content="{{ image if image else 'http://cdn.om-mishra.com/assets/om-mishra-logo.png' }}" />
 
 <!-- Other Meta Tags -->
 <meta name="keywords" content="InkBloom, Blog, ProjectRexa, Technology, Programming, Om Mishra" />
 <meta name="author" content="ProjectRexa, Om Mishra" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<link
-  rel="icon"
-  href="https://cdn.projectrexa.dedyn.io/projectrexa/assets/favicon.ico"
-/>
+<link rel="icon" href="http://cdn.om-mishra.com/assets/om-mishra-logo.png" />
 
 
 <link rel="stylesheet" href="/static/css/base.css" />
